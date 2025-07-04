@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Billing App</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; background: #f8f9fa; }
+        .container { max-width: 900px; margin: 0 auto; background: #fff; padding: 2em 2.5em 2em 2.5em; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        h1 { margin-bottom: 0.5em; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 2em; background: #fff; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        th { background: #f4f4f4; }
+        .menu { background: #343a40; padding: 0.7em 2em; border-radius: 8px 8px 0 0; margin-bottom: 2em; display: flex; gap: 1.5em; }
+        .menu a { color: #fff; text-decoration: none; font-weight: 500; transition: background 0.2s; padding: 6px 14px; border-radius: 4px; }
+        .menu a.active, .menu a:focus { background: #007bff; }
+        .actions { margin-bottom: 1.5em; }
+        .actions a { background: #007bff; color: #fff; border-radius: 4px; padding: 8px 16px; text-decoration: none; margin-right: 1em; }
+        .actions a:hover { background: #0056b3; }
+        ul { margin: 0; padding-left: 1.2em; }
+        @media (max-width: 900px) {
+            .container { padding: 1em; }
+            table, th, td { font-size: 0.95em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="menu">
+            <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>Home</a>
+            <a href="{{ url_for('add_entry') }}" {% if request.endpoint == 'add_entry' %}class="active"{% endif %}>Add Entry</a>
+            <a href="{{ url_for('masters') }}" {% if request.endpoint == 'masters' %}class="active"{% endif %}>Manage Masters</a>
+        </nav>
+        <h1>Billing Entries</h1>
+        <div class="actions">
+            <a href="{{ url_for('add_entry') }}">Add New Entry</a>
+            <a href="{{ url_for('masters') }}">Manage Masters</a>
+            <a href="{{ url_for('category_report', from_date=from_date, to_date=to_date) }}" style="background:#28a745;">Category Report</a>
+            <a href="{{ url_for('payment_type_report', from_date=from_date, to_date=to_date) }}" style="background:#17a2b8;">Payment Type Report</a>
+        </div>
+        <form method="get" action="{{ url_for('index') }}" style="margin-bottom:1.5em;">
+            <label>From: <input type="date" name="from_date" value="{{ from_date }}"></label>
+            <label style="margin-left:1em;">To: <input type="date" name="to_date" value="{{ to_date }}"></label>
+            <label style="margin-left:1em;">Is Cancelled: <input type="checkbox" name="is_cancelled" value="1" {% if request.args.get('is_cancelled') %}checked{% endif %}></label>
+            <button type="submit" style="margin-left:1em;">Filter</button>
+        </form>
+        <table>
+            <tr>
+                <th>OP Bill No</th>
+                <th>Patient Name</th>
+                <th>Date</th>
+                <th>Details</th>
+                <th>Status</th>
+            </tr>
+            {% for bill in bills %}
+            <tr>
+                <td>{{ bill.header.op_bill_no }}</td>
+                <td>{{ bill.header.patient_name }}</td>
+                <td>{{ bill.header.date.strftime('%Y-%m-%d') }}</td>
+                <td>
+                    <ul>
+                    {% for detail in bill.details %}
+                        <li>{{ detail.category.name }} - {{ detail.amount }} ({{ detail.payment_type.name }})</li>
+                    {% endfor %}
+                    </ul>
+                    <div style="font-size:0.95em; color:#555; margin-top:0.5em;">
+                        <b>Total Items:</b> {{ bill.total_items }}<br>
+                        <b>Total Amount:</b> {{ '%.2f' % bill.total_amount }}
+                    </div>
+                    <a href="{{ url_for('print_bill', header_id=bill.header.id) }}" target="_blank" style="display:inline-block;margin-top:0.5em;background:#007bff;color:#fff;padding:6px 14px;border-radius:4px;text-decoration:none;">Print</a>
+                    {% if not bill.header.is_cancelled %}
+                    <button type="button" onclick="cancelBill('{{ bill.header.id }}')" style="background:#dc3545; color:#fff; border:none; border-radius:4px; padding:6px 14px; margin-left:0.5em;">Cancel</button>
+                    {% endif %}
+                </td>
+                <td>{% if bill.header.is_cancelled %}<span style="color:red;">Cancelled</span>{% else %}Active{% endif %}</td>
+                          </tr>
+            {% endfor %}
+        </table>
+        <div style="font-weight:600; font-size:1.1em; margin-top:1em;">
+            Grand Total Amount: {{ '%.2f' % grand_total }}
+        </div>
+    </div>
+    <script>
+    function cancelBill(headerId) {
+        if (confirm('Are you sure you want to cancel this bill?')) {
+            var form = document.createElement('form');
+            form.method = 'POST';
+            form.action = '';
+            var input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = 'cancel_id';
+            input.value = headerId;
+            form.appendChild(input);
+            document.body.appendChild(form);
+            form.submit();
+        }
+    }
+    </script>
+</body>
+</html>

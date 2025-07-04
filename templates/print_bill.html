@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bill Print</title>
+    <style>
+        @media print {
+            body { width: 148mm; height: 210mm; margin: 0; }
+            .no-print { display: none; }
+        }
+        body { font-family: Arial, sans-serif; width: 148mm; margin: 0 auto; }
+        .bill { border: 1px solid #333; padding: 16px; margin-top: 16px; }
+        h2 { margin-top: 0; }
+        table { width: 100%; border-collapse: collapse; margin-top: 1em; }
+        th, td { border: 1px solid #aaa; padding: 6px; text-align: left; }
+    </style>
+    <script>
+        // Always auto-print on load, no print/back buttons
+        window.onload = function() {
+            window.print();
+        };
+    </script>
+</head>
+<body>
+    <div class="bill">
+        <h2>Billing Details</h2>
+        <strong>OP Bill No:</strong> {{ header.op_bill_no }}<br>
+        <strong>Patient Name:</strong> {{ header.patient_name }}<br>
+        <strong>Date:</strong> {{ header.date.strftime('%Y-%m-%d') }}<br>
+        <strong>Status:</strong> {% if header.is_cancelled %}<span style="color:red;">Cancelled</span>{% else %}Active{% endif %}<br>
+        <strong>Created On:</strong> {{ header.created_at.strftime('%Y-%m-%d %H:%M:%S') if header.created_at else '' }}<br>
+        <strong>Updated On:</strong> {{ header.updated_at.strftime('%Y-%m-%d %H:%M:%S') if header.updated_at else '' }}<br>
+        <table>
+            <tr>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Payment Type</th>
+            </tr>
+            {% for d in details %}
+            <tr>
+                <td>{{ d.category.name }}</td>
+                <td>{{ "%.2f"|format(d.amount) }}</td>
+                <td>{{ d.payment_type.name }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        <p><strong>Total Amount:</strong> {{ "%.2f"|format(details|sum(attribute='amount')) }}</p>
+    </div>
+</body>
+</html>

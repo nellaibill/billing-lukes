@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Manage Masters</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; background: #f8f9fa; }
+        .container { max-width: 700px; margin: 0 auto; background: #fff; padding: 2em 2.5em 2em 2.5em; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        h1 { margin-bottom: 0.5em; }
+        h2 { margin-top: 2em; }
+        form { display: flex; gap: 1em; margin-bottom: 1em; }
+        input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex: 1; }
+        button { background: #007bff; color: #fff; border: none; border-radius: 4px; padding: 8px 16px; cursor: pointer; font-size: 1em; }
+        button:hover { background: #0056b3; }
+        table { border-collapse: collapse; width: 100%; margin-top: 0.5em; background: #fff; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        th { background: #f4f4f4; }
+        .menu { background: #343a40; padding: 0.7em 2em; border-radius: 8px 8px 0 0; margin-bottom: 2em; display: flex; gap: 1.5em; }
+        .menu a { color: #fff; text-decoration: none; font-weight: 500; transition: background 0.2s; padding: 6px 14px; border-radius: 4px; }
+        .menu a.active, .menu a:focus { background: #007bff; }
+        @media (max-width: 700px) {
+            .container { padding: 1em; }
+            form { flex-direction: column; gap: 0.5em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <nav class="menu">
+            <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>Home</a>
+            <a href="{{ url_for('add_entry') }}" {% if request.endpoint == 'add_entry' %}class="active"{% endif %}>Add Entry</a>
+            <a href="{{ url_for('masters') }}" {% if request.endpoint == 'masters' %}class="active"{% endif %}>Manage Masters</a>
+        </nav>
+        <h1>Manage Masters</h1>
+        <h2>Category</h2>
+        <form method="post">
+            <input type="text" name="category" placeholder="New Category" required>
+            <button type="submit">Add</button>
+        </form>
+        <table>
+            <tr><th>ID</th><th>Name</th></tr>
+            {% for cat in categories %}
+            <tr><td>{{ cat.id }}</td><td>{{ cat.name }}</td></tr>
+            {% endfor %}
+        </table>
+        <h2>Payment Type</h2>
+        <form method="post">
+            <input type="text" name="payment_type" placeholder="New Payment Type" required>
+            <button type="submit">Add</button>
+        </form>
+        <table>
+            <tr><th>ID</th><th>Name</th></tr>
+            {% for pt in payment_types %}
+            <tr><td>{{ pt.id }}</td><td>{{ pt.name }}</td></tr>
+            {% endfor %}
+        </table>
+    </div>
+</body>
+</html>

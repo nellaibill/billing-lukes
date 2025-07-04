@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Category Collection Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2em; background: #f8f9fa; }
+        .container { max-width: 700px; margin: 0 auto; background: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        h1 { margin-bottom: 1em; }
+        table { border-collapse: collapse; width: 100%; margin-bottom: 2em; background: #fff; }
+        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+        th { background: #f4f4f4; }
+        .back { background: #007bff; color: #fff; border-radius: 4px; padding: 8px 16px; text-decoration: none; }
+        .back:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Category Collection Report</h1>
+        <div style="margin-bottom:1em;">
+            <b>From:</b> {{ from_date }} &nbsp; <b>To:</b> {{ to_date }}
+        </div>
+        <table>
+            <tr>
+                <th>Category</th>
+                <th>Total Amount</th>
+            </tr>
+            {% for name, total in results %}
+            <tr>
+                <td>{{ name }}</td>
+                <td>{{ '%.2f' % (total or 0) }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+        <a href="{{ url_for('index') }}" class="back">Back</a>
+    </div>
+</body>
+</html>
