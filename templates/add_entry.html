@@ -5,24 +5,59 @@
     <title>Add Billing Entry</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 2em; background: #f8f9fa; }
-        .container { max-width: 700px; margin: 0 auto; background: #fff; padding: 2em 2.5em 2em 2.5em; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        h1 { margin-bottom: 0.5em; }
+        .container { max-width: 900px; margin: 0 auto; background: #fff; padding: 2em 2.5em; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        h1 { margin-bottom: 1em; }
         form { width: 100%; }
         label { display: block; margin-top: 1em; font-weight: 500; }
-        input, select { width: 100%; padding: 8px; margin-top: 4px; border: 1px solid #ccc; border-radius: 4px; }
-        button, .menu a { background: #007bff; color: #fff; border: none; border-radius: 4px; padding: 8px 16px; cursor: pointer; font-size: 1em; }
-        button:hover, .menu a:hover { background: #0056b3; }
+        input, select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 4px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button, .navbar a {
+            background: #007bff;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 16px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        button:hover, .navbar a:hover {
+            background: #0056b3;
+        }
         .item-row { display: flex; gap: 1em; margin-bottom: 0.5em; }
         .item-row > * { flex: 1; }
         .remove-btn { flex: 0 0 auto; background: #dc3545; color: #fff; padding: 8px 10px; }
         .remove-btn:hover { background: #a71d2a; }
-        .menu { background: #343a40; padding: 0.7em 2em; border-radius: 8px 8px 0 0; margin-bottom: 2em; display: flex; gap: 1.5em; }
-        .menu a { color: #fff; text-decoration: none; font-weight: 500; transition: background 0.2s; padding: 6px 14px; }
-        .menu a.active, .menu a:focus { background: #007bff; border-radius: 4px; }
+    
         .form-actions { margin-top: 1.5em; display: flex; gap: 1em; }
         @media (max-width: 700px) {
             .container { padding: 1em; }
             .item-row { flex-direction: column; gap: 0.5em; }
+            .navbar { flex-direction: column; gap: 0.5em; }
+        }
+        /* Modal styles */
+        #billModal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+        }
+        #billContent {
+            background: #fff;
+            margin: 5vh auto;
+            padding: 2em;
+            width: 90vw;
+            max-width: 600px;
+            border-radius: 8px;
+            position: relative;
         }
     </style>
     <script>
@@ -45,24 +80,48 @@
             document.getElementById('total-items').textContent = count;
             document.getElementById('total-amount').textContent = total.toFixed(2);
         }
+        // Optional: Clear form fields on page load (for extra safety)
         window.onload = function() {
+            document.getElementById('billingForm').reset();
             document.getElementById('add-item-btn').onclick = addItemRow;
             document.getElementById('items').addEventListener('input', function(e) {
                 if (e.target.name === 'amount') updateTotals();
             });
             updateTotals();
         };
+        // Clear form if page is restored from bfcache (browser back/forward)
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted) {
+                document.getElementById('billingForm').reset();
+                // Remove all but the first item row
+                const items = document.getElementById('items');
+                while (items.children.length > 1) {
+                    items.removeChild(items.lastChild);
+                }
+                // Reset totals
+                document.getElementById('total-items').textContent = '0';
+                document.getElementById('total-amount').textContent = '0.00';
+            }
+        });
+        function showBillModal(billId) {
+            fetch(`/bill/${billId}?modal=1`)
+              .then(response => response.text())
+              .then(html => {
+                document.getElementById('billContent').innerHTML += html;
+                document.getElementById('billModal').style.display = 'block';
+              });
+        }
+        function closeBillModal() {
+            document.getElementById('billModal').style.display = 'none';
+            document.getElementById('billContent').innerHTML = '<button onclick="closeBillModal()" style="position:absolute; top:10px; right:10px;">Close</button>';
+        }
     </script>
 </head>
 <body>
     <div class="container">
-        <nav class="menu">
-            <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>Home</a>
-            <a href="{{ url_for('add_entry') }}" {% if request.endpoint == 'add_entry' %}class="active"{% endif %}>Add Entry</a>
-            <a href="{{ url_for('masters') }}" {% if request.endpoint == 'masters' %}class="active"{% endif %}>Manage Masters</a>
-        </nav>
+        {% include '_navbar.html' %}
         <h1>Add Billing Entry</h1>
-        <form method="post">
+        <form method="post" autocomplete="off" id="billingForm">
             <div class="item-row" style="margin-bottom: 1.5em;">
                 <input type="text" name="op_bill_no" placeholder="OP Bill No" required>
                 <input type="text" name="patient_name" placeholder="Patient Name" required>
@@ -95,6 +154,12 @@
                 <a href="{{ url_for('index') }}" style="background:#6c757d;">Cancel</a>
             </div>
         </form>
+    </div>
+    <div id="billModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:1000;">
+      <div id="billContent" style="background:#fff; margin:5vh auto; padding:2em; width:90vw; max-width:600px; border-radius:8px; position:relative;">
+        <button onclick="closeBillModal()" style="position:absolute; top:10px; right:10px;">Close</button>
+        <!-- Bill HTML will be injected here -->
+      </div>
     </div>
     <template id="item-template">
         <div class="item-row">

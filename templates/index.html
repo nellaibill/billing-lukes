@@ -25,18 +25,9 @@
 </head>
 <body>
     <div class="container">
-        <nav class="menu">
-            <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>Home</a>
-            <a href="{{ url_for('add_entry') }}" {% if request.endpoint == 'add_entry' %}class="active"{% endif %}>Add Entry</a>
-            <a href="{{ url_for('masters') }}" {% if request.endpoint == 'masters' %}class="active"{% endif %}>Manage Masters</a>
-        </nav>
+                {% include '_navbar.html' %}
         <h1>Billing Entries</h1>
-        <div class="actions">
-            <a href="{{ url_for('add_entry') }}">Add New Entry</a>
-            <a href="{{ url_for('masters') }}">Manage Masters</a>
-            <a href="{{ url_for('category_report', from_date=from_date, to_date=to_date) }}" style="background:#28a745;">Category Report</a>
-            <a href="{{ url_for('payment_type_report', from_date=from_date, to_date=to_date) }}" style="background:#17a2b8;">Payment Type Report</a>
-        </div>
+
         <form method="get" action="{{ url_for('index') }}" style="margin-bottom:1.5em;">
             <label>From: <input type="date" name="from_date" value="{{ from_date }}"></label>
             <label style="margin-left:1em;">To: <input type="date" name="to_date" value="{{ to_date }}"></label>

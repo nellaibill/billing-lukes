@@ -1,10 +1,11 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, make_response
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone, timedelta
 from sqlalchemy import and_
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///billing.db'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lukes_billing_db.db'
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/lukes_billing_db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -104,7 +105,9 @@ def add_entry():
                 db.session.add(details)
         db.session.commit()
         return redirect(url_for('print_bill', header_id=header.id, autoprint=1))
-    return render_template('add_entry.html', categories=categories, payment_types=payment_types, datetime=datetime)
+    response = make_response(render_template('add_entry.html', categories=categories, payment_types=payment_types, datetime=datetime))
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return response
 
 @app.route('/masters', methods=['GET', 'POST'])
 def masters():
