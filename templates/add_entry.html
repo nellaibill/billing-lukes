@@ -125,7 +125,7 @@
             <div class="item-row" style="margin-bottom: 1.5em;">
                 <input type="text" name="op_bill_no" placeholder="OP Bill No" required>
                 <input type="text" name="patient_name" placeholder="Patient Name" required>
-                <input type="date" name="date" value="{{ datetime.utcnow().strftime('%Y-%m-%d') }}" required readonly style="background:#e9ecef;">
+                <input type="date" name="date" value="{{ datetime.utcnow().strftime('%Y-%m-%d') }}" required  style="background:#e9ecef;">
             </div>
             <hr>
             <h3>Items</h3>
@@ -151,7 +151,7 @@
             <button type="button" id="add-item-btn">Add Item</button>
             <div class="form-actions">
                 <button type="submit">Save</button>
-                <a href="{{ url_for('index') }}" style="background:#6c757d;">Cancel</a>
+                <a href="{{ url_for('index') }}" style="background:#e20b0b;">Cancel</a>
             </div>
         </form>
     </div>

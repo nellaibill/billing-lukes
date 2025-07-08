@@ -129,8 +129,10 @@ def masters():
 
 @app.route('/category_report')
 def category_report():
-    from_date = request.args.get('from_date', datetime.now().strftime('%Y-%m-%d'))
-    to_date = request.args.get('to_date', datetime.now().strftime('%Y-%m-%d'))
+    from datetime import date
+    today_str = datetime.now().strftime('%Y-%m-%d')
+    from_date = request.args.get('from_date', today_str)
+    to_date = request.args.get('to_date', today_str)
     from_dt = datetime.strptime(from_date, '%Y-%m-%d').date()
     to_dt = datetime.strptime(to_date, '%Y-%m-%d').date()
     # Query category-wise totals
@@ -139,12 +141,14 @@ def category_report():
         .join(HeaderEntry, DetailsEntry.header_id == HeaderEntry.id)\
         .filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt, HeaderEntry.is_cancelled == False)\
         .group_by(Category.name).all()
-    return render_template('category_report.html', results=results, from_date=from_date, to_date=to_date)
+    total_amount = sum(total or 0 for _, total in results)
+    return render_template('category_report.html', results=results, from_date=from_date, to_date=to_date, total_amount=total_amount)
 
 @app.route('/payment_type_report')
 def payment_type_report():
-    from_date = request.args.get('from_date', datetime.now().strftime('%Y-%m-%d'))
-    to_date = request.args.get('to_date', datetime.now().strftime('%Y-%m-%d'))
+    today_str = datetime.now().strftime('%Y-%m-%d')
+    from_date = request.args.get('from_date', today_str)
+    to_date = request.args.get('to_date', today_str)
     from_dt = datetime.strptime(from_date, '%Y-%m-%d').date()
     to_dt = datetime.strptime(to_date, '%Y-%m-%d').date()
     # Query payment type-wise totals
@@ -153,7 +157,8 @@ def payment_type_report():
         .join(HeaderEntry, DetailsEntry.header_id == HeaderEntry.id)\
         .filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt, HeaderEntry.is_cancelled == False)\
         .group_by(PaymentType.name).all()
-    return render_template('payment_type_report.html', results=results, from_date=from_date, to_date=to_date)
+    total_amount = sum(total or 0 for _, total in results)
+    return render_template('payment_type_report.html', results=results, from_date=from_date, to_date=to_date, total_amount=total_amount)
 
 if __name__ == '__main__':
     with app.app_context():
