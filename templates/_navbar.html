@@ -35,4 +35,8 @@
     <a href="{{ url_for('masters') }}" {% if request.endpoint == 'masters' %}class="active"{% endif %}>Manage Masters</a>
     <a href="{{ url_for('category_report') }}" {% if request.endpoint == 'category_report' %}class="active"{% endif %}>Category Report</a>
     <a href="{{ url_for('payment_type_report') }}" {% if request.endpoint == 'payment_type_report' %}class="active"{% endif %}>Payment Type Report</a>
+    {% if session.get('usertype') == 'admin' %}
+    <a href="{{ url_for('users') }}" {% if request.path == url_for('users') %}class="active"{% endif %}>Users</a>
+    {% endif %}
+    <a href="{{ url_for('logout') }}">Logout</a>
 </nav>

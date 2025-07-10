@@ -16,7 +16,7 @@
             border: 1px solid #ccc;
             border-radius: 4px;
         }
-        button, .navbar a {
+        button {
             background: #007bff;
             color: #fff;
             border: none;
@@ -25,7 +25,7 @@
             cursor: pointer;
             font-size: 1em;
         }
-        button:hover, .navbar a:hover {
+        button:hover {
             background: #0056b3;
         }
         .item-row { display: flex; gap: 1em; margin-bottom: 0.5em; }
@@ -88,6 +88,8 @@
                 if (e.target.name === 'amount') updateTotals();
             });
             updateTotals();
+            // Set focus to OP Bill No on page load
+            document.querySelector('input[name="op_bill_no"]').focus();
         };
         // Clear form if page is restored from bfcache (browser back/forward)
         window.addEventListener('pageshow', function(event) {
@@ -115,6 +117,19 @@
             document.getElementById('billModal').style.display = 'none';
             document.getElementById('billContent').innerHTML = '<button onclick="closeBillModal()" style="position:absolute; top:10px; right:10px;">Close</button>';
         }
+        // Keyboard shortcut: Ctrl+A to add item
+        document.addEventListener('keydown', function(e) {
+            // Avoid interfering with input fields' select all
+            if (
+                e.ctrlKey &&
+                e.key.toLowerCase() === 'a' &&
+                document.activeElement.tagName !== 'INPUT' &&
+                document.activeElement.tagName !== 'TEXTAREA'
+            ) {
+                e.preventDefault();
+                addItemRow();
+            }
+        });
     </script>
 </head>
 <body>

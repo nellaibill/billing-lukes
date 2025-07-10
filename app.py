@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, redirect, url_for, make_response
+from flask import Flask, render_template, request, redirect, url_for, make_response, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone, timedelta
 from sqlalchemy import and_
+from functools import wraps
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lukes_billing_db.db'
@@ -43,7 +44,48 @@ class DetailsEntry(db.Model):
     category = db.relationship('Category', backref='details_entries')
     payment_type = db.relationship('PaymentType', backref='details_entries')
 
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(100), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    usertype = db.Column(db.String(20), nullable=False)  # 'admin' or 'user'
+    createddate = db.Column(db.DateTime, default=lambda: datetime.now(IST), nullable=False)
+    updateddate = db.Column(db.DateTime, default=lambda: datetime.now(IST), onupdate=lambda: datetime.now(IST), nullable=False)
+
+    def __repr__(self):
+        return f'<User {self.username}>'
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'user_id' not in session:
+            return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    error = None
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        user = User.query.filter_by(username=username).first()
+        if user and user.password == password:
+            session['user_id'] = user.id
+            session['username'] = user.username
+            session['usertype'] = user.usertype
+            return redirect(url_for('index'))
+        else:
+            error = 'Invalid username or password'
+    return render_template('login.html', error=error)
+
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect(url_for('login'))
+
 @app.route('/', methods=['GET', 'POST'])
+@login_required
 def index():
     today_str = datetime.now().strftime('%Y-%m-%d')
     from_date = request.args.get('from_date', today_str)
@@ -85,6 +127,7 @@ def print_bill(header_id):
     return render_template('print_bill.html', header=header, details=details)
 
 @app.route('/add', methods=['GET', 'POST'])
+@login_required
 def add_entry():
     categories = Category.query.all()
     payment_types = PaymentType.query.all()
@@ -110,6 +153,7 @@ def add_entry():
     return response
 
 @app.route('/masters', methods=['GET', 'POST'])
+@login_required
 def masters():
     categories = Category.query.all()
     payment_types = PaymentType.query.all()
@@ -128,6 +172,7 @@ def masters():
     return render_template('masters.html', categories=categories, payment_types=payment_types)
 
 @app.route('/category_report')
+@login_required
 def category_report():
     from datetime import date
     today_str = datetime.now().strftime('%Y-%m-%d')
@@ -145,6 +190,7 @@ def category_report():
     return render_template('category_report.html', results=results, from_date=from_date, to_date=to_date, total_amount=total_amount)
 
 @app.route('/payment_type_report')
+@login_required
 def payment_type_report():
     today_str = datetime.now().strftime('%Y-%m-%d')
     from_date = request.args.get('from_date', today_str)
@@ -159,6 +205,40 @@ def payment_type_report():
         .group_by(PaymentType.name).all()
     total_amount = sum(total or 0 for _, total in results)
     return render_template('payment_type_report.html', results=results, from_date=from_date, to_date=to_date, total_amount=total_amount)
+
+@app.route('/users', methods=['GET', 'POST'])
+@login_required
+def users():
+    edit_id = request.args.get('edit')
+    user = None
+    if edit_id:
+        user = User.query.get(int(edit_id))
+    if request.method == 'POST':
+        user_id = request.form.get('user_id')
+        username = request.form['username']
+        password = request.form['password']
+        usertype = request.form['usertype']
+        if user_id:  # Edit existing
+            user = User.query.get(int(user_id))
+            if user:
+                user.username = username
+                if password:
+                    user.password = password  # In production, hash the password!
+                user.usertype = usertype
+                user.updateddate = datetime.now(IST)
+        else:  # Add new
+            user = User(username=username, password=password, usertype=usertype, createddate=datetime.now(IST), updateddate=datetime.now(IST))
+            db.session.add(user)
+        db.session.commit()
+        return redirect(url_for('users'))
+    users = User.query.order_by(User.id).all()
+    return render_template('users.html', users=users, user=user)
+
+@app.context_processor
+def inject_usertype():
+    return dict(session=session)
+
+app.secret_key = 'your_secret_key_here'
 
 if __name__ == '__main__':
     with app.app_context():
