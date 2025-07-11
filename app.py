@@ -107,6 +107,7 @@ def index():
     headers = query.all()
     bills = []
     grand_total = 0.0
+    cancelled_total = 0.0
     for header in headers:
         details = DetailsEntry.query.filter_by(header_id=header.id).all()
         total_amount = sum(d.amount for d in details)
@@ -117,8 +118,11 @@ def index():
             'total_amount': total_amount,
             'total_items': total_items
         })
-        grand_total += total_amount
-    return render_template('index.html', bills=bills, from_date=from_date, to_date=to_date, grand_total=grand_total)
+        if header.is_cancelled:
+            cancelled_total += total_amount
+        else:
+            grand_total += total_amount
+    return render_template('index.html', bills=bills, from_date=from_date, to_date=to_date, grand_total=grand_total, cancelled_total=cancelled_total)
 
 @app.route('/bill/<int:header_id>')
 def print_bill(header_id):
@@ -174,20 +178,46 @@ def masters():
 @app.route('/category_report')
 @login_required
 def category_report():
-    from datetime import date
     today_str = datetime.now().strftime('%Y-%m-%d')
     from_date = request.args.get('from_date', today_str)
     to_date = request.args.get('to_date', today_str)
     from_dt = datetime.strptime(from_date, '%Y-%m-%d').date()
     to_dt = datetime.strptime(to_date, '%Y-%m-%d').date()
-    # Query category-wise totals
-    results = db.session.query(Category.name, db.func.sum(DetailsEntry.amount))\
-        .join(DetailsEntry, DetailsEntry.category_id == Category.id)\
-        .join(HeaderEntry, DetailsEntry.header_id == HeaderEntry.id)\
-        .filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt, HeaderEntry.is_cancelled == False)\
-        .group_by(Category.name).all()
-    total_amount = sum(total or 0 for _, total in results)
-    return render_template('category_report.html', results=results, from_date=from_date, to_date=to_date, total_amount=total_amount)
+    # Query category and payment type-wise totals
+    results = db.session.query(
+        Category.name.label('category'),
+        PaymentType.name.label('payment_type'),
+        db.func.sum(DetailsEntry.amount).label('total')
+    ).join(DetailsEntry, DetailsEntry.category_id == Category.id)
+    results = results.join(PaymentType, DetailsEntry.payment_type_id == PaymentType.id)
+    results = results.join(HeaderEntry, DetailsEntry.header_id == HeaderEntry.id)
+    results = results.filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt, HeaderEntry.is_cancelled == False)
+    results = results.group_by(Category.name, PaymentType.name).all()
+
+    # Build a nested dict: {category: {payment_type: total, ...}, ...}
+    data = {}
+    payment_types = set()
+    for category, payment_type, total in results:
+        payment_types.add(payment_type)
+        data.setdefault(category, {})[payment_type] = total or 0
+    # Get all categories in id order
+    all_categories = [c.name for c in Category.query.order_by(Category.id).all() if c.name in data]
+    all_payment_types = sorted(payment_types)
+    total_by_category = {cat: sum(data[cat].values()) for cat in all_categories}
+    total_by_payment = {pt: sum(data[cat].get(pt, 0) for cat in all_categories) for pt in all_payment_types}
+    grand_total = sum(total_by_category.values())
+
+    return render_template(
+        'category_report.html',
+        data=data,
+        all_categories=all_categories,
+        all_payment_types=all_payment_types,
+        total_by_category=total_by_category,
+        total_by_payment=total_by_payment,
+        grand_total=grand_total,
+        from_date=from_date,
+        to_date=to_date
+    )
 
 @app.route('/payment_type_report')
 @login_required

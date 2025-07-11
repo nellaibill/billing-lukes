@@ -7,7 +7,8 @@
 <body>
     <div class="container">
                 {% include '_navbar.html' %}
-        <h1>Category Collection Report</h1>
+        <h1>ST.LUKES'S LEPROSARIUM,PEIKULAM</h1>
+                <h1>Collection Report</h1>
         <form method="get" style="margin-bottom:1em;">
             <label><b>From:</b> <input type="date" name="from_date" value="{{ from_date }}"></label>
             <label style="margin-left:1em;"><b>To:</b> <input type="date" name="to_date" value="{{ to_date }}"></label>
@@ -18,17 +19,26 @@
             <table>
                 <tr>
                     <th>Category</th>
-                    <th>Total Amount</th>
+                    {% for pt in all_payment_types %}
+                        <th>{{ pt }}</th>
+                    {% endfor %}
+                    <th>Total</th>
                 </tr>
-                {% for name, total in results %}
+                {% for cat in all_categories %}
                 <tr>
-                    <td>{{ name }}</td>
-                    <td>{{ '%.2f' % (total or 0) }}</td>
+                    <td>{{ cat }}</td>
+                    {% for pt in all_payment_types %}
+                        <td>{{ '%.2f' % data[cat].get(pt, 0) }}</td>
+                    {% endfor %}
+                    <td><b>{{ '%.2f' % total_by_category[cat] }}</b></td>
                 </tr>
                 {% endfor %}
                 <tr style="font-weight:bold; background:#f4f4f4;">
                     <td>Total</td>
-                    <td>{{ '%.2f' % total_amount }}</td>
+                    {% for pt in all_payment_types %}
+                        <td>{{ '%.2f' % total_by_payment[pt] }}</td>
+                    {% endfor %}
+                    <td>{{ '%.2f' % grand_total }}</td>
                 </tr>
             </table>
         </div>

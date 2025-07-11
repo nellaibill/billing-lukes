@@ -36,8 +36,8 @@
         </form>
         <table>
             <tr>
-                <th>OP Bill No</th>
-                <th>Patient Name</th>
+                <th>Bill Number</th>
+                <th>Name</th>
                 <th>Date</th>
                 <th>Details</th>
                 <th>Status</th>
@@ -67,7 +67,8 @@
             {% endfor %}
         </table>
         <div style="font-weight:600; font-size:1.1em; margin-top:1em;">
-            Grand Total Amount: {{ '%.2f' % grand_total }}
+            Grand Total Amount: {{ '%.2f' % grand_total }}<br>
+            Cancelled Total Amount: {{ '%.2f' % cancelled_total }}
         </div>
     </div>
     <script>

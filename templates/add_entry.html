@@ -80,6 +80,18 @@
             document.getElementById('total-items').textContent = count;
             document.getElementById('total-amount').textContent = total.toFixed(2);
         }
+        // Enable Enter key to move to next input/select
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                const form = document.getElementById('billingForm');
+                const focusable = form.querySelectorAll('input, select, button');
+                const index = Array.prototype.indexOf.call(focusable, document.activeElement);
+                if (index > -1 && index < focusable.length - 1) {
+                    e.preventDefault();
+                    focusable[index + 1].focus();
+                }
+            }
+        });
         // Optional: Clear form fields on page load (for extra safety)
         window.onload = function() {
             document.getElementById('billingForm').reset();
@@ -138,8 +150,8 @@
         <h1>Add Billing Entry</h1>
         <form method="post" autocomplete="off" id="billingForm">
             <div class="item-row" style="margin-bottom: 1.5em;">
-                <input type="text" name="op_bill_no" placeholder="OP Bill No" required>
-                <input type="text" name="patient_name" placeholder="Patient Name" required>
+                <input type="text" name="op_bill_no" placeholder="Bill Number" required>
+                <input type="text" name="patient_name" placeholder="Name" required>
                 <input type="date" name="date" value="{{ datetime.utcnow().strftime('%Y-%m-%d') }}" required  style="background:#e9ecef;">
             </div>
             <hr>
