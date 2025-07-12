@@ -3,6 +3,8 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone, timedelta
 from sqlalchemy import and_
 from functools import wraps
+import os
+import shutil
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///lukes_billing_db.db'
@@ -268,7 +270,51 @@ def users():
 def inject_usertype():
     return dict(session=session)
 
+# Jinja2 filter for date formatting
+@app.template_filter('datetime')
+def format_datetime(value, format='%d/%B/%Y'):
+    if not value:
+        return ''
+    if isinstance(value, str):
+        try:
+            value = datetime.strptime(value, '%Y-%m-%d')
+        except Exception:
+            return value
+    return value.strftime(format)
+
 app.secret_key = 'your_secret_key_here'
+
+BACKUP_DIR = os.path.join(os.path.dirname(__file__), 'instance', 'backups')
+DB_PATH = os.path.join(os.path.dirname(__file__), 'instance', 'lukes_billing_db.db')
+LAST_BACKUP_FILE = os.path.join(os.path.dirname(__file__), 'instance', 'last_backup.txt')
+
+@app.before_request
+def daily_backup():
+    if not os.path.exists(BACKUP_DIR):
+        os.makedirs(BACKUP_DIR)
+    today = datetime.now().strftime('%Y-%m-%d')
+    last_backup = None
+    if os.path.exists(LAST_BACKUP_FILE):
+        with open(LAST_BACKUP_FILE, 'r') as f:
+            last_backup = f.read().strip()
+    if last_backup != today:
+        # Backup DB
+        backup_file = os.path.join(BACKUP_DIR, f'billing_{today}.db')
+        if os.path.exists(DB_PATH):
+            shutil.copy2(DB_PATH, backup_file)
+        # Update last backup date
+        with open(LAST_BACKUP_FILE, 'w') as f:
+            f.write(today)
+        # Remove backups older than 7 days
+        for fname in os.listdir(BACKUP_DIR):
+            if fname.startswith('billing_') and fname.endswith('.db'):
+                date_str = fname[len('billing_'):-3]
+                try:
+                    file_date = datetime.strptime(date_str, '%Y-%m-%d')
+                    if (datetime.now() - file_date).days > 7:
+                        os.remove(os.path.join(BACKUP_DIR, fname))
+                except Exception:
+                    pass
 
 if __name__ == '__main__':
     with app.app_context():

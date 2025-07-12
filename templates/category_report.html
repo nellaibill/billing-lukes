@@ -3,19 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <title>Category Collection Report</title>
+    <style>
+        @media print {
+            body * { visibility: hidden !important; }
+            #report-content, #report-content * { visibility: visible !important; }
+            #report-content { position: absolute; left: 0; top: 0; width: 100vw; background: #fff; }
+        }
+    </style>
 </head>
 <body>
     <div class="container">
                 {% include '_navbar.html' %}
-        <h1>ST.LUKES'S LEPROSARIUM,PEIKULAM</h1>
-                <h1>Collection Report</h1>
+
         <form method="get" style="margin-bottom:1em;">
             <label><b>From:</b> <input type="date" name="from_date" value="{{ from_date }}"></label>
             <label style="margin-left:1em;"><b>To:</b> <input type="date" name="to_date" value="{{ to_date }}"></label>
             <button type="submit" id ="filter-btn" style="margin-left:1em;">Filter</button>
-            <button type="button" onclick="printReport()" style="margin-left:1em;">Print</button>
+            <button type="button" id ="print-btn" onclick="printReport()" style="margin-left:1em;">Print</button>
         </form>
         <div id="report-content">
+            <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 8px;">
+                <img src="/static/logo.png" alt="Logo" style="height:70px; width:auto; margin-right:18px; display:block;">
+                <div style="flex:1;">
+                    <h3 style="margin:0;">ST.LUKES'S LEPROSARIUM,PEIKULAM</h3>
+                    <h3 style="margin:0;">Collection Report</h3>
+                </div>
+            </div>
+            <h4>
+                From: {{ from_date|datetime('%d/%B/%Y') if from_date else '' }}
+                To: {{ to_date|datetime('%d/%B/%Y') if to_date else '' }}
+            </h4>
             <table>
                 <tr>
                     <th>Category</th>
@@ -53,12 +70,13 @@
             if (navbar) navbar.style.display = 'none';
             if (backBtn) backBtn.style.display = 'none';
             if (printBtn) printBtn.style.display = 'none';
+            if (filterBtn) filterBtn.style.display = 'none';
             window.print();
             // Restore after print
             setTimeout(function() {
                 if (navbar) navbar.style.display = '';
                 if (backBtn) backBtn.style.display = '';
-                if (filterBtn) filterForm.style.display = '';
+                if (filterBtn) filterBtn.style.display = '';
                 if (printBtn) printBtn.style.display = '';
             }, 500);
         }

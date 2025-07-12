@@ -22,7 +22,12 @@
 </head>
 <body>
     <div class="bill">
-        <h2>ST.LUKES'S LEPROSARIUM,PEIKULAM</h2>
+        <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 8px;">
+                <img src="/static/logo.png" alt="Logo" style="height:70px; width:auto; margin-right:18px; display:block;">
+                <div style="flex:1;">
+                    <h3 style="margin:0;">ST.LUKES'S LEPROSARIUM,PEIKULAM</h3>
+                </div>
+            </div>
         <strong>OP Bill No:</strong> {{ header.op_bill_no }}<br>
         <strong>Patient Name:</strong> {{ header.patient_name }}<br>
         <strong>Date:</strong> {{ header.date.strftime('%d/%B/%Y') }}<br>

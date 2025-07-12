@@ -1,42 +1,170 @@
 <style>
-        .navbar {
-            background: #343a40;
-            padding: 1em 2em;
-            border-radius: 8px 8px 0 0;
-            margin-bottom: 2em;
+    body {
+        font-family: 'Segoe UI', Arial, sans-serif;
+        margin: 0;
+        background: #f8f9fa;
+        display: flex;
+    }
+    .sidebar {
+        width: 220px;
+        background: #fff;
+        border-right: 1px solid #e0e0e0;
+        min-height: 100vh;
+        padding-top: 1.5em;
+        box-shadow: 2px 0 8px rgba(0,0,0,0.04);
+        display: flex;
+        flex-direction: column;
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 100;
+        transition: transform 0.2s, width 0.2s;
+    }
+    .sidebar .logo {
+        font-size: 1.3em;
+        font-weight: bold;
+        color: #0078d4;
+        margin-bottom: 2em;
+        text-align: center;
+        letter-spacing: 1px;
+    }
+    .sidebar a {
+        display: flex;
+        align-items: center;
+        color: #222;
+        text-decoration: none;
+        font-weight: 500;
+        padding: 12px 24px;
+        border-radius: 6px;
+        margin: 2px 10px;
+        transition: background 0.2s, color 0.2s;
+        font-size: 1.08em;
+        white-space: nowrap;
+    }
+    .sidebar a.active, .sidebar a:focus {
+        background: #e5f1fb;
+        color: #0078d4;
+    }
+    .sidebar a:hover {
+        background: #f3f8fd;
+        color: #0078d4;
+    }
+    .sidebar .logout {
+        color: #dc3545;
+    }
+    .hamburger {
+        display: none;
+        position: fixed;
+        top: 18px;
+        left: 18px;
+        z-index: 200;
+        width: 36px;
+        height: 36px;
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+    }
+    .hamburger span, .hamburger span:before, .hamburger span:after {
+        display: block;
+        background: #222;
+        height: 4px;
+        width: 22px;
+        border-radius: 2px;
+        position: absolute;
+        content: '';
+        transition: all 0.2s;
+    }
+    .hamburger span {
+        position: relative;
+        margin: 0 auto;
+        top: 16px;
+    }
+    .hamburger span:before {
+        content: '';
+        position: absolute;
+        top: -8px;
+        left: 0;
+    }
+    .hamburger span:after {
+        content: '';
+        position: absolute;
+        top: 8px;
+        left: 0;
+    }
+    .container {
+        max-width: 90%;
+        margin: 0 auto;
+        background: #fff;
+        padding: 2em;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-left: 240px;
+        transition: margin-left 0.2s;
+    }
+    h1 { margin-bottom: 1em; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 2em; background: #fff; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    th { background: #f4f4f4; }
+    .back { background: #007bff; color: #fff; border-radius: 4px; padding: 8px 16px; text-decoration: none; }
+    .back:hover { background: #0056b3; }
+    @media (max-width: 900px) {
+        .sidebar {
+            width: 180px;
+        }
+        .container {
+            margin-left: 190px;
+            padding: 1em;
+        }
+    }
+    @media (max-width: 700px) {
+        .sidebar {
+            transform: translateX(-100%);
+            width: 180px;
+        }
+        .sidebar.open {
+            transform: translateX(0);
+        }
+        .hamburger {
             display: flex;
-            gap: 1.5em;
         }
-        .navbar a {
-            color: #fff;
-            text-decoration: none;
-            font-weight: 500;
-            transition: background 0.2s;
-            padding: 6px 14px;
-            border-radius: 4px;
+        .container {
+            margin-left: 0;
+            padding: 1em;
         }
-        .navbar a.active, .navbar a:focus {
-            background: #007bff;
+        body {
+            flex-direction: column;
         }
-
-        body { font-family: Arial, sans-serif; margin: 2em; background: #f8f9fa; }
-        .container { max-width: 70%; margin: 0 auto; background: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        h1 { margin-bottom: 1em; }
-        table { border-collapse: collapse; width: 100%; margin-bottom: 2em; background: #fff; }
-        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-        th { background: #f4f4f4; }
-        .back { background: #007bff; color: #fff; border-radius: 4px; padding: 8px 16px; text-decoration: none; }
-        .back:hover { background: #0056b3; }
-        
+    }
 </style>
-<nav class="navbar">
-    <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>Billing Entries</a>
+<button class="hamburger" id="hamburger-menu" aria-label="Toggle menu"><span></span></button>
+<nav class="sidebar" id="sidebar-nav">
+    <div class="logo">Easy Billing</div>
     <a href="{{ url_for('add_entry') }}" {% if request.endpoint == 'add_entry' %}class="active"{% endif %}>Add Entry</a>
+    <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>Billing Entries</a>
     <a href="{{ url_for('masters') }}" {% if request.endpoint == 'masters' %}class="active"{% endif %}>Manage Masters</a>
     <a href="{{ url_for('category_report') }}" {% if request.endpoint == 'category_report' %}class="active"{% endif %}>Category Report</a>
-    <a href="{{ url_for('payment_type_report') }}" {% if request.endpoint == 'payment_type_report' %}class="active"{% endif %}>Payment Type Report</a>
     {% if session.get('usertype') == 'admin' %}
     <a href="{{ url_for('users') }}" {% if request.path == url_for('users') %}class="active"{% endif %}>Users</a>
     {% endif %}
-    <a href="{{ url_for('logout') }}">Logout</a>
+    <a href="{{ url_for('logout') }}" class="logout">Logout</a>
 </nav>
+<script>
+    const hamburger = document.getElementById('hamburger-menu');
+    const sidebar = document.getElementById('sidebar-nav');
+    hamburger && hamburger.addEventListener('click', function() {
+        sidebar.classList.toggle('open');
+    });
+    // Optional: close sidebar when clicking outside on mobile
+    document.addEventListener('click', function(e) {
+        if (window.innerWidth <= 700 && sidebar.classList.contains('open')) {
+            if (!sidebar.contains(e.target) && e.target !== hamburger) {
+                sidebar.classList.remove('open');
+            }
+        }
+    });
+</script>
