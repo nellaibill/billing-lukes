@@ -230,14 +230,51 @@ def payment_type_report():
     to_date = request.args.get('to_date', today_str)
     from_dt = datetime.strptime(from_date, '%Y-%m-%d').date()
     to_dt = datetime.strptime(to_date, '%Y-%m-%d').date()
-    # Query payment type-wise totals
-    results = db.session.query(PaymentType.name, db.func.sum(DetailsEntry.amount))\
-        .join(DetailsEntry, DetailsEntry.payment_type_id == PaymentType.id)\
+
+    # Get all categories
+    all_categories = [c.name for c in Category.query.order_by(Category.name).all()]
+
+    # Get all payment types, but combine 'UPI' and 'SBI' as 'Bank'
+    payment_types_raw = [pt.name for pt in PaymentType.query.order_by(PaymentType.name).all()]
+    all_payment_types = []
+    for pt in payment_types_raw:
+        if pt in ('UPI', 'SBI'):
+            if 'Bank' not in all_payment_types:
+                all_payment_types.append('Bank')
+        else:
+            all_payment_types.append(pt)
+
+    # Prepare data structure: data[category][payment_type] = amount
+    data = {cat: {pt: 0 for pt in all_payment_types} for cat in all_categories}
+
+    # Query all details in range
+    details = db.session.query(Category.name, PaymentType.name, DetailsEntry.amount)\
+        .join(DetailsEntry, DetailsEntry.category_id == Category.id)\
+        .join(PaymentType, DetailsEntry.payment_type_id == PaymentType.id)\
         .join(HeaderEntry, DetailsEntry.header_id == HeaderEntry.id)\
-        .filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt, HeaderEntry.is_cancelled == False)\
-        .group_by(PaymentType.name).all()
-    total_amount = sum(total or 0 for _, total in results)
-    return render_template('payment_type_report.html', results=results, from_date=from_date, to_date=to_date, total_amount=total_amount)
+        .filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt, HeaderEntry.is_cancelled == False).all()
+
+    for cat, pt, amt in details:
+        pt_key = 'Bank' if pt in ('UPI', 'SBI') else pt
+        if cat in data and pt_key in data[cat]:
+            data[cat][pt_key] += amt
+
+    # Calculate totals
+    total_by_category = {cat: sum(data[cat].values()) for cat in all_categories}
+    total_by_payment = {pt: sum(data[cat][pt] for cat in all_categories) for pt in all_payment_types}
+    grand_total = sum(total_by_category.values())
+
+    return render_template(
+        'payment_type_report.html',
+        all_categories=all_categories,
+        all_payment_types=all_payment_types,
+        data=data,
+        total_by_category=total_by_category,
+        total_by_payment=total_by_payment,
+        grand_total=grand_total,
+        from_date=from_date,
+        to_date=to_date
+    )
 
 @app.route('/users', methods=['GET', 'POST'])
 @login_required

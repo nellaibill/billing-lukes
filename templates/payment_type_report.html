@@ -2,12 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Payment Type Collection Report</title>
+    <title>Cash and Bank Report</title>
 </head>
 <body>
     <div class="container">
                 {% include '_navbar.html' %}
-        <h1>Payment Type Collection Report</h1>
+        <h1>Cash and Bank Report</h1>
         <form id="filter-form" method="get" style="margin-bottom:1em;">
             <label><b>From:</b> <input type="date" name="from_date" value="{{ from_date }}"></label>
             <label style="margin-left:1em;"><b>To:</b> <input type="date" name="to_date" value="{{ to_date }}"></label>
@@ -15,20 +15,44 @@
             <button type="button" id="print-btn" onclick="printReport()" style="margin-left:1em;">Print</button>
         </form>
         <div id="report-content">
+            <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 8px;">
+                <img src="/static/logo.png" alt="Logo" style="height:70px; width:auto; margin-right:18px; display:block;">
+                <div style="flex:1;">
+                    <h3 style="margin:0;">ST.LUKES'S LEPROSARIUM,PEIKULAM</h3>
+                    <h3 style="margin:0;">Cash and Bank Report</h3>
+                </div>
+            </div>
+            <h4>
+                From: {{ from_date|datetime('%d/%B/%Y') if from_date else '' }}
+                To: {{ to_date|datetime('%d/%B/%Y') if to_date else '' }}
+            </h4>
             <table>
                 <tr>
-                    <th>Payment Type</th>
-                    <th>Total Amount</th>
+                    <th>Category</th>
+                    {% for pt in all_payment_types %}
+                        <th>{{ pt }}</th>
+                    {% endfor %}
+                    <th>Total</th>
                 </tr>
-                {% for name, total in results %}
+                {% for cat in all_categories %}
+                {% set cash = data[cat].get('Cash', 0) %}
+                {% set bank = data[cat].get('Bank', 0) %}
+                {% if cash != 0 or bank != 0 %}
                 <tr>
-                    <td>{{ name }}</td>
-                    <td>{{ '%.2f' % (total or 0) }}</td>
+                    <td>{{ cat }}</td>
+                    {% for pt in all_payment_types %}
+                        <td>{{ '%.2f' % data[cat].get(pt, 0) }}</td>
+                    {% endfor %}
+                    <td><b>{{ '%.2f' % total_by_category[cat] }}</b></td>
                 </tr>
+                {% endif %}
                 {% endfor %}
                 <tr style="font-weight:bold; background:#f4f4f4;">
                     <td>Total</td>
-                    <td>{{ '%.2f' % total_amount }}</td>
+                    {% for pt in all_payment_types %}
+                        <td>{{ '%.2f' % total_by_payment[pt] }}</td>
+                    {% endfor %}
+                    <td>{{ '%.2f' % grand_total }}</td>
                 </tr>
             </table>
         </div>
