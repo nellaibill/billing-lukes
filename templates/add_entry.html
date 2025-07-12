@@ -142,6 +142,60 @@
                 addItemRow();
             }
         });
+        // External API search logic
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchBox = document.getElementById('external-search');
+            const datalist = document.getElementById('external-bill-datalist');
+            const billNoInput = document.getElementById('op_bill_no');
+            const nameInput = document.getElementById('patient_name');
+            let timer = null;
+            let lastData = [];
+            searchBox.addEventListener('input', function() {
+                const query = searchBox.value.trim();
+                if (timer) clearTimeout(timer);
+                if (query.length < 2) {
+                    datalist.innerHTML = '';
+                    lastData = [];
+                    return;
+                }
+                timer = setTimeout(function() {
+                    console.log('Searching external API:', query);
+                    fetch(`http://192.168.1.36:8080/stlukes/api_search_patient.php?search=${encodeURIComponent(query)}`)
+                        .then(res => {
+                            return res.json();
+                        })
+                        .then(data => {
+                            datalist.innerHTML = '';
+                            lastData = [];
+                            if (data && data.success && data.data && data.data.length > 0) {
+                                data.data.forEach(function(item) {
+                                    const opt = document.createElement('option');
+                                    opt.value = item.hospital_no + ' - ' + item.patient_name;
+                                    datalist.appendChild(opt);
+                                    lastData.push({
+                                        display: item.hospital_no + ' - ' + item.patient_name,
+                                        hospital_no: item.hospital_no,
+                                        patient_name: item.patient_name
+                                    });
+                                });
+                            }
+                        })
+                        .catch((err) => { 
+                            console.log('API fetch error:', err);
+                            datalist.innerHTML = '';
+                            lastData = [];
+                        });
+                }, 300);
+            });
+            searchBox.addEventListener('change', function() {
+                const val = searchBox.value;
+                const found = lastData.find(item => item.display === val);
+                if (found) {
+                    billNoInput.value = found.hospital_no;
+                    nameInput.value = found.patient_name;
+                }
+            });
+        });
     </script>
 </head>
 <body>
@@ -150,9 +204,17 @@
         <h1>Add Billing Entry</h1>
         <form method="post" autocomplete="off" id="billingForm">
             <div class="item-row" style="margin-bottom: 1.5em;">
-                <input type="text" name="op_bill_no" placeholder="Bill Number" required>
-                <input type="text" name="patient_name" placeholder="Name" required>
+                <input type="text" name="slno" value="{{ slno }}" readonly style="background:#e9ecef;" placeholder="Current Bill No (Sl.No)">
                 <input type="date" name="date" value="{{ datetime.utcnow().strftime('%Y-%m-%d') }}" required  style="background:#e9ecef;">
+            </div>
+            <!-- Search box for external API -->
+            <div class="item-row" style="margin-bottom: 1.5em;">
+                <input type="text" id="external-search" placeholder="Search external records..." autocomplete="off" list="external-bill-datalist">
+                <datalist id="external-bill-datalist"></datalist>
+            </div>
+            <div class="item-row" style="margin-bottom: 1.5em;">
+                <input type="text" name="op_bill_no" id="op_bill_no" placeholder="Bill Number" required>
+                <input type="text" name="patient_name" id="patient_name" placeholder="Name" required>
             </div>
             <hr>
             <h3>Items</h3>

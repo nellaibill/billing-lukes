@@ -23,15 +23,21 @@
 <body>
     <div class="bill">
         <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 8px;">
-                <img src="/static/logo.png" alt="Logo" style="height:70px; width:auto; margin-right:18px; display:block;">
-                <div style="flex:1;">
-                    <h3 style="margin:0;">ST.LUKES'S LEPROSARIUM,PEIKULAM</h3>
-                </div>
+            <img src="/static/logo.png" alt="Logo" style="height:70px; width:auto; margin-right:18px; display:block;">
+            <div style="flex:1;">
+                <h3 style="margin:0;">ST.LUKES'S LEPROSARIUM,PEIKULAM</h3>
             </div>
-        <strong>OP Bill No:</strong> {{ header.op_bill_no }}<br>
-        <strong>Patient Name:</strong> {{ header.patient_name }}<br>
-        <strong>Date:</strong> {{ header.date.strftime('%d/%B/%Y') }}<br>
-        <strong>Status:</strong> {% if header.is_cancelled %}<span style="color:red;">Cancelled</span>{% else %}Active{% endif %}<br>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+            <div>
+                <strong>Patient Name:</strong> {{ header.patient_name }}<br>
+                <strong>Date:</strong> {{ header.date.strftime('%d/%B/%Y') }}<br>
+            </div>
+            <div style="text-align: right; min-width: 140px;">
+                <strong>OP Bill No:</strong> {{ header.op_bill_no }}<br>
+                <strong>Status:</strong> {% if header.is_cancelled %}<span style="color:red;">Cancelled</span>{% else %}Active{% endif %}<br>
+            </div>
+        </div>
         <table>
             <tr>
                 <th>Category</th>

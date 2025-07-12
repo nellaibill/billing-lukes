@@ -137,6 +137,7 @@ def print_bill(header_id):
 def add_entry():
     categories = Category.query.all()
     payment_types = PaymentType.query.all()
+    slno = db.session.query(db.func.count(HeaderEntry.id)).scalar() + 1
     if request.method == 'POST':
         op_bill_no = request.form['op_bill_no']
         patient_name = request.form['patient_name']
@@ -154,7 +155,7 @@ def add_entry():
                 db.session.add(details)
         db.session.commit()
         return redirect(url_for('print_bill', header_id=header.id, autoprint=1))
-    response = make_response(render_template('add_entry.html', categories=categories, payment_types=payment_types, datetime=datetime))
+    response = make_response(render_template('add_entry.html', categories=categories, payment_types=payment_types, datetime=datetime, slno=slno))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     return response
 
