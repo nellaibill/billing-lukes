@@ -160,7 +160,7 @@
                 }
                 timer = setTimeout(function() {
                     console.log('Searching external API:', query);
-                    fetch(`http://192.168.1.36:8080/stlukes/api_search_patient.php?search=${encodeURIComponent(query)}`)
+                    fetch(`http://192.168.1.24/stlukes/api_search_patient.php?search=${encodeURIComponent(query)}`)
                         .then(res => {
                             return res.json();
                         })
@@ -213,8 +213,8 @@
                 <datalist id="external-bill-datalist"></datalist>
             </div>
             <div class="item-row" style="margin-bottom: 1.5em;">
-                <input type="text" name="op_bill_no" id="op_bill_no" placeholder="OP/IP Number" required>
-                <input type="text" name="patient_name" id="patient_name" placeholder="Patient Name" required>
+                <input type="text" name="op_bill_no" id="op_bill_no" placeholder="Bill Number" required>
+                <input type="text" name="patient_name" id="patient_name" placeholder="Name" required>
             </div>
             <hr>
             <h3>Items</h3>
