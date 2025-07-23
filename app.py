@@ -231,8 +231,8 @@ def payment_type_report():
     from_dt = datetime.strptime(from_date, '%Y-%m-%d').date()
     to_dt = datetime.strptime(to_date, '%Y-%m-%d').date()
 
-    # Get all categories
-    all_categories = [c.name for c in Category.query.order_by(Category.name).all()]
+    # Get all categories (order by ID for consistency with category report)
+    all_categories = [c.name for c in Category.query.order_by(Category.id).all()]
 
     # Get all payment types, but combine 'UPI' and 'SBI' as 'Bank'
     payment_types_raw = [pt.name for pt in PaymentType.query.order_by(PaymentType.name).all()]

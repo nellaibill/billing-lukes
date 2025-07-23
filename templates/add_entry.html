@@ -64,8 +64,20 @@
         function addItemRow() {
             const template = document.getElementById('item-template');
             const clone = template.content.cloneNode(true);
-            document.getElementById('items').appendChild(clone);
+            const itemsDiv = document.getElementById('items');
+            // Insert at the top
+            if (itemsDiv.children.length > 0) {
+                itemsDiv.insertBefore(clone, itemsDiv.firstChild);
+            } else {
+                itemsDiv.appendChild(clone);
+            }
             updateTotals();
+            // Focus first input in the new row
+            const firstRow = itemsDiv.firstElementChild;
+            if (firstRow) {
+                const firstInput = firstRow.querySelector('select, input');
+                if (firstInput) firstInput.focus();
+            }
         }
         function updateTotals() {
             const amounts = document.querySelectorAll('input[name="amount"]');
@@ -79,6 +91,22 @@
             });
             document.getElementById('total-items').textContent = count;
             document.getElementById('total-amount').textContent = total.toFixed(2);
+            // Disable Save button if no item rows
+            const saveBtn = document.getElementById('save-btn');
+            const itemsDiv = document.getElementById('items');
+            if (itemsDiv.children.length === 0) {
+                saveBtn.disabled = true;
+                saveBtn.title = 'Add at least one item to save.';
+                saveBtn.style.background = '#ccc';
+                saveBtn.style.color = '#888';
+                saveBtn.style.cursor = 'not-allowed';
+            } else {
+                saveBtn.disabled = false;
+                saveBtn.title = '';
+                saveBtn.style.background = '#007bff';
+                saveBtn.style.color = '#fff';
+                saveBtn.style.cursor = 'pointer';
+            }
         }
         // Enable Enter key to move to next input/select
         document.addEventListener('keydown', function(e) {
@@ -99,6 +127,10 @@
             document.getElementById('items').addEventListener('input', function(e) {
                 if (e.target.name === 'amount') updateTotals();
             });
+            // Also update on row add/remove
+            const itemsDiv = document.getElementById('items');
+            const observer = new MutationObserver(updateTotals);
+            observer.observe(itemsDiv, { childList: true });
             updateTotals();
             // Set focus to OP Bill No on page load
             document.querySelector('input[name="op_bill_no"]').focus();
@@ -129,17 +161,23 @@
             document.getElementById('billModal').style.display = 'none';
             document.getElementById('billContent').innerHTML = '<button onclick="closeBillModal()" style="position:absolute; top:10px; right:10px;">Close</button>';
         }
-        // Keyboard shortcut: Ctrl+A to add item
+        // Keyboard shortcut: Ctrl+A to add item (allow in Amount input, but not in other text fields)
         document.addEventListener('keydown', function(e) {
-            // Avoid interfering with input fields' select all
             if (
                 e.ctrlKey &&
-                e.key.toLowerCase() === 'a' &&
-                document.activeElement.tagName !== 'INPUT' &&
-                document.activeElement.tagName !== 'TEXTAREA'
+                e.key.toLowerCase() === 'a'
             ) {
-                e.preventDefault();
-                addItemRow();
+                // Only prevent default and add row if:
+                // - Not in a text input/textarea, or
+                // - In an input with name="amount"
+                const el = document.activeElement;
+                if (
+                    (el.tagName !== 'INPUT' && el.tagName !== 'TEXTAREA') ||
+                    (el.tagName === 'INPUT' && el.name === 'amount')
+                ) {
+                    e.preventDefault();
+                    addItemRow();
+                }
             }
         });
         // External API search logic
@@ -239,7 +277,7 @@
             </div>
             <button type="button" id="add-item-btn">Add Item</button>
             <div class="form-actions">
-                <button type="submit">Save</button>
+                <button type="submit" id="save-btn">Save</button>
                 <a href="{{ url_for('index') }}" style="background:#e20b0b;">Cancel</a>
             </div>
         </form>

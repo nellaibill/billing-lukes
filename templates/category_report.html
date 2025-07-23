@@ -45,17 +45,17 @@
                 <tr>
                     <td>{{ cat }}</td>
                     {% for pt in all_payment_types %}
-                        <td>{{ '%.2f' % data[cat].get(pt, 0) }}</td>
+                        <td style="text-align:right;">{{ '%.2f' % data[cat].get(pt, 0) }}</td>
                     {% endfor %}
-                    <td><b>{{ '%.2f' % total_by_category[cat] }}</b></td>
+                    <td style="text-align:right;"><b>{{ '%.2f' % total_by_category[cat] }}</b></td>
                 </tr>
                 {% endfor %}
                 <tr style="font-weight:bold; background:#f4f4f4;">
                     <td>Total</td>
                     {% for pt in all_payment_types %}
-                        <td>{{ '%.2f' % total_by_payment[pt] }}</td>
+                        <td style="text-align:right;">{{ '%.2f' % total_by_payment[pt] }}</td>
                     {% endfor %}
-                    <td>{{ '%.2f' % grand_total }}</td>
+                    <td style="text-align:right;">{{ '%.2f' % grand_total }}</td>
                 </tr>
             </table>
         </div>
