@@ -6,6 +6,7 @@
 
 # Instance folder (contains database and backups)
 instance/
+instance/**
 
 # Byte-compiled / cache files
 __pycache__/
