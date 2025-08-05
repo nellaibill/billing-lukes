@@ -18,6 +18,9 @@
         <form method="get" style="margin-bottom:1em;">
             <label><b>From:</b> <input type="date" name="from_date" value="{{ from_date }}"></label>
             <label style="margin-left:1em;"><b>To:</b> <input type="date" name="to_date" value="{{ to_date }}"></label>
+            <label style="margin-left:1em;">
+                <input type="checkbox" name="detailed" value="1" {% if detailed_view %}checked{% endif %} onchange="this.form.submit()"> Detailed View
+            </label>
             <button type="submit" style="background:#1976d2; color:white; border:none; padding:6px 16px; border-radius:4px; margin-left:1em;" id ="filter-btn">Filter</button>
             <button type="button" style="background:#1976d2; color:white; border:none; padding:6px 16px; border-radius:4px; margin-left:1em;" id ="print-btn" onclick="printReport()">Print</button>
         </form>
@@ -45,7 +48,24 @@
                 <tr>
                     <td>{{ cat }}</td>
                     {% for pt in all_payment_types %}
-                        <td style="text-align:right;">{{ '%.2f' % data[cat].get(pt, 0) }}</td>
+                        <td style="text-align:right; vertical-align:top;">
+                            {% if detailed_view %}
+                                {% if data[cat].get(pt) is iterable and data[cat].get(pt) is not string %}
+                                    {% for entry in data[cat][pt] %}
+                                        <div style="border-bottom:1px solid #e0e0e0; margin-bottom:2px; padding-bottom:2px; text-align:left; font-size:0.95em;">
+                                            <span>Patinet Name : <b>{{ entry.patient_name }}</b></span><br>
+                                            <span>Bill No: {{ entry.bill_no }}</span><br>
+                                            <span>Date: {{ entry.date|datetime('%d/%B/%Y') if entry.date else '' }}</span><br>
+                                            <span>Amount: <b>{{ '%.2f' % entry.amount }}</b></span>
+                                        </div>
+                                    {% endfor %}
+                                {% else %}
+                                    {{ '%.2f' % data[cat].get(pt, 0) }}
+                                {% endif %}
+                            {% else %}
+                                {{ '%.2f' % data[cat].get(pt, 0) }}
+                            {% endif %}
+                        </td>
                     {% endfor %}
                     <td style="text-align:right;"><b>{{ '%.2f' % total_by_category[cat] }}</b></td>
                 </tr>

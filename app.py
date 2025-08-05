@@ -184,31 +184,71 @@ def category_report():
     today_str = datetime.now().strftime('%Y-%m-%d')
     from_date = request.args.get('from_date', today_str)
     to_date = request.args.get('to_date', today_str)
+    detailed_view = request.args.get('detailed') == '1'
     from_dt = datetime.strptime(from_date, '%Y-%m-%d').date()
     to_dt = datetime.strptime(to_date, '%Y-%m-%d').date()
-    # Query category and payment type-wise totals
-    results = db.session.query(
+    # Query details with patient name, bill number, and date
+    details = db.session.query(
         Category.name.label('category'),
         PaymentType.name.label('payment_type'),
-        db.func.sum(DetailsEntry.amount).label('total')
+        DetailsEntry.amount,
+        HeaderEntry.patient_name,
+        HeaderEntry.op_bill_no,
+        HeaderEntry.date
     ).join(DetailsEntry, DetailsEntry.category_id == Category.id)
-    results = results.join(PaymentType, DetailsEntry.payment_type_id == PaymentType.id)
-    results = results.join(HeaderEntry, DetailsEntry.header_id == HeaderEntry.id)
-    results = results.filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt, HeaderEntry.is_cancelled == False)
-    results = results.group_by(Category.name, PaymentType.name).all()
+    details = details.join(PaymentType, DetailsEntry.payment_type_id == PaymentType.id)
+    details = details.join(HeaderEntry, DetailsEntry.header_id == HeaderEntry.id)
+    details = details.filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt, HeaderEntry.is_cancelled == False)
+    details = details.order_by(Category.id, PaymentType.name, HeaderEntry.op_bill_no).all()
 
-    # Build a nested dict: {category: {payment_type: total, ...}, ...}
+    # Organize data: {category: {payment_type: [details]}} for detailed, {category: {payment_type: float}} for summary
     data = {}
     payment_types = set()
-    for category, payment_type, total in results:
+    categories = set()
+    for category, payment_type, amount, patient_name, bill_no, entry_date in details:
         payment_types.add(payment_type)
-        data.setdefault(category, {})[payment_type] = total or 0
-    # Get all categories in id order
-    all_categories = [c.name for c in Category.query.order_by(Category.id).all() if c.name in data]
+        categories.add(category)
+        data.setdefault(category, {}).setdefault(payment_type, []).append({
+            'amount': amount,
+            'patient_name': patient_name,
+            'bill_no': bill_no,
+            'date': entry_date
+        })
+
+    # Sort each list of entries by date (ascending) for detailed view
+    if detailed_view:
+        for cat in data:
+            for pt in data[cat]:
+                data[cat][pt].sort(key=lambda x: x['date'] or datetime.min)
+
+    all_categories = [c.name for c in Category.query.order_by(Category.id).all() if c.name in categories]
     all_payment_types = sorted(payment_types)
-    total_by_category = {cat: sum(data[cat].values()) for cat in all_categories}
-    total_by_payment = {pt: sum(data[cat].get(pt, 0) for cat in all_categories) for pt in all_payment_types}
-    grand_total = sum(total_by_category.values())
+
+    # Calculate totals
+    total_by_category = {}
+    total_by_payment = {pt: 0 for pt in all_payment_types}
+    grand_total = 0
+    # Prepare summary data if not detailed_view
+    if not detailed_view:
+        summary_data = {}
+        for cat in all_categories:
+            summary_data[cat] = {}
+            for pt in all_payment_types:
+                pt_total = sum(entry['amount'] for entry in data.get(cat, {}).get(pt, []))
+                summary_data[cat][pt] = pt_total
+        data = summary_data
+
+    for cat in all_categories:
+        cat_total = 0
+        for pt in all_payment_types:
+            if detailed_view:
+                pt_total = sum(entry['amount'] for entry in data.get(cat, {}).get(pt, []))
+            else:
+                pt_total = data.get(cat, {}).get(pt, 0)
+            cat_total += pt_total
+            total_by_payment[pt] += pt_total
+        total_by_category[cat] = cat_total
+        grand_total += cat_total
 
     return render_template(
         'category_report.html',
@@ -219,7 +259,8 @@ def category_report():
         total_by_payment=total_by_payment,
         grand_total=grand_total,
         from_date=from_date,
-        to_date=to_date
+        to_date=to_date,
+        detailed_view=detailed_view
     )
 
 @app.route('/payment_type_report')
