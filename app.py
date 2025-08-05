@@ -185,83 +185,166 @@ def category_report():
     from_date = request.args.get('from_date', today_str)
     to_date = request.args.get('to_date', today_str)
     detailed_view = request.args.get('detailed') == '1'
+    datewise_view = request.args.get('datewise') == '1'
     from_dt = datetime.strptime(from_date, '%Y-%m-%d').date()
     to_dt = datetime.strptime(to_date, '%Y-%m-%d').date()
-    # Query details with patient name, bill number, and date
-    details = db.session.query(
-        Category.name.label('category'),
-        PaymentType.name.label('payment_type'),
-        DetailsEntry.amount,
-        HeaderEntry.patient_name,
-        HeaderEntry.op_bill_no,
-        HeaderEntry.date
-    ).join(DetailsEntry, DetailsEntry.category_id == Category.id)
-    details = details.join(PaymentType, DetailsEntry.payment_type_id == PaymentType.id)
-    details = details.join(HeaderEntry, DetailsEntry.header_id == HeaderEntry.id)
-    details = details.filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt, HeaderEntry.is_cancelled == False)
-    details = details.order_by(Category.id, PaymentType.name, HeaderEntry.op_bill_no).all()
 
-    # Organize data: {category: {payment_type: [details]}} for detailed, {category: {payment_type: float}} for summary
-    data = {}
-    payment_types = set()
-    categories = set()
-    for category, payment_type, amount, patient_name, bill_no, entry_date in details:
-        payment_types.add(payment_type)
-        categories.add(category)
-        data.setdefault(category, {}).setdefault(payment_type, []).append({
-            'amount': amount,
-            'patient_name': patient_name,
-            'bill_no': bill_no,
-            'date': entry_date
-        })
+    # Get all categories and payment types
+    all_categories = [c.name for c in Category.query.order_by(Category.id).all()]
+    all_payment_types = [pt.name for pt in PaymentType.query.order_by(PaymentType.name).all()]
 
-    # Sort each list of entries by date (ascending) for detailed view
-    if detailed_view:
-        for cat in data:
-            for pt in data[cat]:
-                data[cat][pt].sort(key=lambda x: x['date'] or datetime.min)
+    if datewise_view:
+        # Query: group by date, category, payment type
+        results = db.session.query(
+            HeaderEntry.date,
+            Category.name.label('category'),
+            PaymentType.name.label('payment_type'),
+            db.func.sum(DetailsEntry.amount).label('total')
+        )\
+        .join(DetailsEntry, DetailsEntry.header_id == HeaderEntry.id)\
+        .join(Category, DetailsEntry.category_id == Category.id)\
+        .join(PaymentType, DetailsEntry.payment_type_id == PaymentType.id)\
+        .filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt, HeaderEntry.is_cancelled == False)\
+        .group_by(HeaderEntry.date, Category.name, PaymentType.name)\
+        .order_by(HeaderEntry.date, Category.name, PaymentType.name).all()
 
-    all_categories = [c.name for c in Category.query.order_by(Category.id).all() if c.name in categories]
-    all_payment_types = sorted(payment_types)
+        # Organize data: {date: {category: {payment_type: total}}}
+        data = {}
+        payment_types_present = set()
+        categories_present = set()
+        for date, category, payment_type, total in results:
+            payment_types_present.add(payment_type)
+            categories_present.add(category)
+            data.setdefault(date, {}).setdefault(category, {})[payment_type] = total or 0
 
-    # Calculate totals
-    total_by_category = {}
-    total_by_payment = {pt: 0 for pt in all_payment_types}
-    grand_total = 0
-    # Prepare summary data if not detailed_view
-    if not detailed_view:
-        summary_data = {}
-        for cat in all_categories:
-            summary_data[cat] = {}
+        all_dates = sorted(data.keys())
+        # Only show categories/payment types present in results
+        all_categories = [c for c in all_categories if c in categories_present]
+        all_payment_types = [pt for pt in all_payment_types if pt in payment_types_present]
+
+        # Calculate totals by category and payment type for each date
+        total_by_category_date = {}
+        total_by_payment_date = {}
+        grand_total_date = {}
+        for date in all_dates:
+            total_by_category_date[date] = {}
+            total_by_payment_date[date] = {pt: 0 for pt in all_payment_types}
+            grand_total_date[date] = 0
+            for cat in all_categories:
+                cat_total = 0
+                for pt in all_payment_types:
+                    amt = data.get(date, {}).get(cat, {}).get(pt, 0)
+                    cat_total += amt
+                    total_by_payment_date[date][pt] += amt
+                total_by_category_date[date][cat] = cat_total
+                grand_total_date[date] += cat_total
+
+        # Calculate overall totals
+        total_by_category = {cat: 0 for cat in all_categories}
+        total_by_payment = {pt: 0 for pt in all_payment_types}
+        grand_total = 0
+        for date in all_dates:
+            for cat in all_categories:
+                total_by_category[cat] += total_by_category_date[date][cat]
             for pt in all_payment_types:
-                pt_total = sum(entry['amount'] for entry in data.get(cat, {}).get(pt, []))
-                summary_data[cat][pt] = pt_total
-        data = summary_data
+                total_by_payment[pt] += total_by_payment_date[date][pt]
+            grand_total += grand_total_date[date]
 
-    for cat in all_categories:
-        cat_total = 0
-        for pt in all_payment_types:
-            if detailed_view:
-                pt_total = sum(entry['amount'] for entry in data.get(cat, {}).get(pt, []))
-            else:
-                pt_total = data.get(cat, {}).get(pt, 0)
-            cat_total += pt_total
-            total_by_payment[pt] += pt_total
-        total_by_category[cat] = cat_total
-        grand_total += cat_total
+        return render_template(
+            'category_report.html',
+            data=data,
+            all_dates=all_dates,
+            all_categories=all_categories,
+            all_payment_types=all_payment_types,
+            total_by_category_date=total_by_category_date,
+            total_by_payment_date=total_by_payment_date,
+            grand_total_date=grand_total_date,
+            total_by_category=total_by_category,
+            total_by_payment=total_by_payment,
+            grand_total=grand_total,
+            from_date=from_date,
+            to_date=to_date,
+            detailed_view=detailed_view,
+            datewise_view=datewise_view
+        )
+    else:
+        # Query details with patient name, bill number, and date
+        details = db.session.query(
+            Category.name.label('category'),
+            PaymentType.name.label('payment_type'),
+            DetailsEntry.amount,
+            HeaderEntry.patient_name,
+            HeaderEntry.op_bill_no,
+            HeaderEntry.date
+        ).join(DetailsEntry, DetailsEntry.category_id == Category.id)
+        details = details.join(PaymentType, DetailsEntry.payment_type_id == PaymentType.id)
+        details = details.join(HeaderEntry, DetailsEntry.header_id == HeaderEntry.id)
+        details = details.filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt, HeaderEntry.is_cancelled == False)
+        details = details.order_by(Category.id, PaymentType.name, HeaderEntry.op_bill_no).all()
 
-    return render_template(
-        'category_report.html',
-        data=data,
-        all_categories=all_categories,
-        all_payment_types=all_payment_types,
-        total_by_category=total_by_category,
-        total_by_payment=total_by_payment,
-        grand_total=grand_total,
-        from_date=from_date,
-        to_date=to_date,
-        detailed_view=detailed_view
-    )
+        # Organize data: {category: {payment_type: [details]}} for detailed, {category: {payment_type: float}} for summary
+        data = {}
+        payment_types_present = set()
+        categories_present = set()
+        for category, payment_type, amount, patient_name, bill_no, entry_date in details:
+            payment_types_present.add(payment_type)
+            categories_present.add(category)
+            data.setdefault(category, {}).setdefault(payment_type, []).append({
+                'amount': amount,
+                'patient_name': patient_name,
+                'bill_no': bill_no,
+                'date': entry_date
+            })
+
+        # Sort each list of entries by date (ascending) for detailed view
+        if detailed_view:
+            for cat in data:
+                for pt in data[cat]:
+                    data[cat][pt].sort(key=lambda x: x['date'] or datetime.min)
+
+        # Only show categories/payment types present in results
+        all_categories = [c for c in all_categories if c in categories_present]
+        all_payment_types = [pt for pt in all_payment_types if pt in payment_types_present]
+
+        # Calculate totals
+        total_by_category = {}
+        total_by_payment = {pt: 0 for pt in all_payment_types}
+        grand_total = 0
+        # Prepare summary data if not detailed_view
+        if not detailed_view:
+            summary_data = {}
+            for cat in all_categories:
+                summary_data[cat] = {}
+                for pt in all_payment_types:
+                    pt_total = sum(entry['amount'] for entry in data.get(cat, {}).get(pt, []))
+                    summary_data[cat][pt] = pt_total
+            data = summary_data
+
+        for cat in all_categories:
+            cat_total = 0
+            for pt in all_payment_types:
+                if detailed_view:
+                    pt_total = sum(entry['amount'] for entry in data.get(cat, {}).get(pt, []))
+                else:
+                    pt_total = data.get(cat, {}).get(pt, 0)
+                cat_total += pt_total
+                total_by_payment[pt] += pt_total
+            total_by_category[cat] = cat_total
+            grand_total += cat_total
+
+        return render_template(
+            'category_report.html',
+            data=data,
+            all_categories=all_categories,
+            all_payment_types=all_payment_types,
+            total_by_category=total_by_category,
+            total_by_payment=total_by_payment,
+            grand_total=grand_total,
+            from_date=from_date,
+            to_date=to_date,
+            detailed_view=detailed_view,
+            datewise_view=datewise_view
+        )
 
 @app.route('/payment_type_report')
 @login_required

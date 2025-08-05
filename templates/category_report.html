@@ -4,10 +4,28 @@
     <meta charset="UTF-8">
     <title>Category Collection Report</title>
     <style>
+        table {
+            border-collapse: collapse;
+            width: 100%;
+        }
+        th, td {
+            border: 1px solid #bbb;
+            padding: 6px 10px;
+            text-align: right;
+        }
+        th {
+            background: #f4f4f4;
+            text-align: center;
+        }
+        td:first-child, th:first-child {
+            text-align: left;
+        }
         @media print {
             body * { visibility: hidden !important; }
             #report-content, #report-content * { visibility: visible !important; }
             #report-content { position: absolute; left: 0; top: 0; width: 100vw; background: #fff; }
+            thead { display: table-header-group; }
+            .print-header { display: block !important; page-break-before: always; }
         }
     </style>
 </head>
@@ -21,37 +39,109 @@
             <label style="margin-left:1em;">
                 <input type="checkbox" name="detailed" value="1" {% if detailed_view %}checked{% endif %} onchange="this.form.submit()"> Detailed View
             </label>
+            <label style="margin-left:1em;">
+                <input type="checkbox" name="datewise" value="1" {% if datewise_view %}checked{% endif %} onchange="this.form.submit()"> Datewise
+            </label>
             <button type="submit" style="background:#1976d2; color:white; border:none; padding:6px 16px; border-radius:4px; margin-left:1em;" id ="filter-btn">Filter</button>
             <button type="button" style="background:#1976d2; color:white; border:none; padding:6px 16px; border-radius:4px; margin-left:1em;" id ="print-btn" onclick="printReport()">Print</button>
         </form>
         <div id="report-content">
-            <div style="display: flex; align-items: center; justify-content: flex-start; margin-bottom: 8px;">
-                <img src="/static/logo.jpg" alt="Logo" style="height:70px; width:auto; margin-right:18px; display:block;">
-                <div style="flex:1;">
-                    <h3 style="margin:0;">ST.LUKES'S LEPROSARIUM,PEIKULAM</h3>
-                    <h3 style="margin:0;">Collection Report</h3>
-                </div>
-            </div>
-            <h4>
-                From: {{ from_date|datetime('%d/%B/%Y') if from_date else '' }}
-                To: {{ to_date|datetime('%d/%B/%Y') if to_date else '' }}
-            </h4>
+            {% if datewise_view %}
             <table>
-                <tr>
-                    <th>Category</th>
-                    {% for pt in all_payment_types %}
-                        <th>{{ pt }}</th>
+                <thead>
+                    <tr>
+                        <td colspan="{{ 3 + all_payment_types|length }}" style="border:none; background:none; padding:0;">
+                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 8px;">
+                                <img src="/static/logo.jpg" alt="Logo" style="height:70px; width:auto; margin-bottom:8px; display:block;">
+                                <div style="text-align:center; width:100%;">
+                                    <h3 style="margin:0;">ST.LUKES'S LEPROSARIUM,PEIKULAM</h3>
+                                    <h3 style="margin:0;">Collection Report</h3>
+                                    <h4 style="margin:0; font-weight:normal;">
+                                        From: {{ from_date|datetime('%d/%B/%Y') if from_date else '' }}
+                                        To: {{ to_date|datetime('%d/%B/%Y') if to_date else '' }}
+                                    </h4>
+                                </div>
+                                <div style="width:100%; border-bottom:2px solid #404142; margin-top:8px;"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Date</th>
+                        <th>Category</th>
+                        {% for pt in all_payment_types %}
+                            <th>{{ pt }}</th>
+                        {% endfor %}
+                        <th>Total</th>
+                    </tr>
+                </thead>
+                {% for date in all_dates %}
+                    {% for cat in all_categories %}
+                        <tr>
+                            {% if loop.index0 == 0 %}
+                                <td rowspan="{{ all_categories|length + 1 }}" style="vertical-align:top; font-weight:bold;">{{ date|datetime('%d/%B/%Y') }}</td>
+                            {% endif %}
+                            <td>{{ cat }}</td>
+                            {% for pt in all_payment_types %}
+                                <td style="text-align:right; vertical-align:top;">
+                                    {% set cat_data = data.get(date, {}).get(cat, {}) %}
+                                    {{ '%.2f' % cat_data.get(pt, 0) }}
+                                </td>
+                            {% endfor %}
+                            <td style="text-align:right;"><b>{{ '%.2f' % total_by_category_date[date][cat] }}</b></td>
+                        </tr>
                     {% endfor %}
-                    <th>Total</th>
+                    <tr style="font-weight:bold; background:#f4f4f4;">
+                        <td>Total</td>
+                        {% for pt in all_payment_types %}
+                            <td style="text-align:right;">{{ '%.2f' % total_by_payment_date[date][pt] }}</td>
+                        {% endfor %}
+                        <td style="text-align:right;">{{ '%.2f' % grand_total_date[date] }}</td>
+                    </tr>
+                {% endfor %}
+                <tr style="font-weight:bold; background:#e0e0e0;">
+                    <td colspan="2">Grand Total</td>
+                    {% for pt in all_payment_types %}
+                        <td style="text-align:right;">{{ '%.2f' % total_by_payment[pt] }}</td>
+                    {% endfor %}
+                    <td style="text-align:right;">{{ '%.2f' % grand_total }}</td>
                 </tr>
+            </table>
+            {% else %}
+            <table>
+                <thead>
+                    <tr>
+                        <td colspan="{{ 2 + all_payment_types|length }}" style="border:none; background:none; padding:0;">
+                            <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom: 8px;">
+                                <img src="/static/logo.jpg" alt="Logo" style="height:70px; width:auto; margin-bottom:8px; display:block;">
+                                <div style="text-align:center; width:100%;">
+                                    <h3 style="margin:0;">ST.LUKES'S LEPROSARIUM,PEIKULAM</h3>
+                                    <h3 style="margin:0;">Collection Report</h3>
+                                    <h4 style="margin:0; font-weight:normal;">
+                                        From: {{ from_date|datetime('%d/%B/%Y') if from_date else '' }}
+                                        To: {{ to_date|datetime('%d/%B/%Y') if to_date else '' }}
+                                    </h4>
+                                </div>
+                                <div style="width:100%; border-bottom:2px solid #1976d2; margin-top:8px;"></div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Category</th>
+                        {% for pt in all_payment_types %}
+                            <th>{{ pt }}</th>
+                        {% endfor %}
+                        <th>Total</th>
+                    </tr>
+                </thead>
                 {% for cat in all_categories %}
                 <tr>
                     <td>{{ cat }}</td>
                     {% for pt in all_payment_types %}
                         <td style="text-align:right; vertical-align:top;">
+                            {% set cat_data = data.get(cat, {}) %}
                             {% if detailed_view %}
-                                {% if data[cat].get(pt) is iterable and data[cat].get(pt) is not string %}
-                                    {% for entry in data[cat][pt] %}
+                                {% if cat_data.get(pt) is iterable and cat_data.get(pt) is not string %}
+                                    {% for entry in cat_data.get(pt, []) %}
                                         <div style="border-bottom:1px solid #e0e0e0; margin-bottom:2px; padding-bottom:2px; text-align:left; font-size:0.95em;">
                                             <span>Patinet Name : <b>{{ entry.patient_name }}</b></span><br>
                                             <span>Bill No: {{ entry.bill_no }}</span><br>
@@ -60,10 +150,10 @@
                                         </div>
                                     {% endfor %}
                                 {% else %}
-                                    {{ '%.2f' % data[cat].get(pt, 0) }}
+                                    {{ '%.2f' % cat_data.get(pt, 0) }}
                                 {% endif %}
                             {% else %}
-                                {{ '%.2f' % data[cat].get(pt, 0) }}
+                                {{ '%.2f' % cat_data.get(pt, 0) }}
                             {% endif %}
                         </td>
                     {% endfor %}
@@ -78,6 +168,7 @@
                     <td style="text-align:right;">{{ '%.2f' % grand_total }}</td>
                 </tr>
             </table>
+            {% endif %}
         </div>
         <a href="{{ url_for('index') }}" class="back">Back</a>
         <script>
