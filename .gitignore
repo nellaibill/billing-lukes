@@ -1,0 +1,22 @@
+# Python virtual environment
+.venv/
+
+# VS Code settings
+.vscode/
+
+# Instance folder (contains database and backups)
+instance/
+
+# Byte-compiled / cache files
+__pycache__/
+*.py[cod]
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Environment variables
+.env
