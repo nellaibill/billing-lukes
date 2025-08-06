@@ -42,6 +42,9 @@
             <label style="margin-left:1em;">
                 <input type="checkbox" name="datewise" value="1" {% if datewise_view %}checked{% endif %} onchange="this.form.submit()"> Datewise
             </label>
+            <label style="margin-left:1em;">
+                <input type="checkbox" name="combine_bank" value="1" {% if combine_bank %}checked{% endif %} onchange="this.form.submit()"> Combine UPI & SBI as Bank
+            </label>
             <button type="submit" style="background:#1976d2; color:white; border:none; padding:6px 16px; border-radius:4px; margin-left:1em;" id ="filter-btn">Filter</button>
             <button type="button" style="background:#1976d2; color:white; border:none; padding:6px 16px; border-radius:4px; margin-left:1em;" id ="print-btn" onclick="printReport()">Print</button>
         </form>

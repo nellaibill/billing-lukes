@@ -186,12 +186,18 @@ def category_report():
     to_date = request.args.get('to_date', today_str)
     detailed_view = request.args.get('detailed') == '1'
     datewise_view = request.args.get('datewise') == '1'
+    combine_bank = request.args.get('combine_bank') == '1'
     from_dt = datetime.strptime(from_date, '%Y-%m-%d').date()
     to_dt = datetime.strptime(to_date, '%Y-%m-%d').date()
 
     # Get all categories and payment types
     all_categories = [c.name for c in Category.query.order_by(Category.id).all()]
-    all_payment_types = [pt.name for pt in PaymentType.query.order_by(PaymentType.name).all()]
+    payment_types_raw = [pt.name for pt in PaymentType.query.order_by(PaymentType.name).all()]
+    if combine_bank:
+        all_payment_types = [pt for pt in payment_types_raw if pt not in ('UPI', 'SBI')]
+        all_payment_types.append('Bank')
+    else:
+        all_payment_types = payment_types_raw
 
     if datewise_view:
         # Query: group by date, category, payment type
@@ -215,11 +221,19 @@ def category_report():
         for date, category, payment_type, total in results:
             payment_types_present.add(payment_type)
             categories_present.add(category)
-            data.setdefault(date, {}).setdefault(category, {})[payment_type] = total or 0
+            if combine_bank and payment_type in ('UPI', 'SBI'):
+                payment_type_key = 'Bank'
+            else:
+                payment_type_key = payment_type
+            data.setdefault(date, {}).setdefault(category, {})[payment_type_key] = data.setdefault(date, {}).setdefault(category, {}).get(payment_type_key, 0) + (total or 0)
 
         all_dates = sorted(data.keys())
         # Only show categories/payment types present in results
         all_categories = [c for c in all_categories if c in categories_present]
+        if combine_bank:
+            payment_types_present.discard('UPI')
+            payment_types_present.discard('SBI')
+            payment_types_present.add('Bank')
         all_payment_types = [pt for pt in all_payment_types if pt in payment_types_present]
 
         # Calculate totals by category and payment type for each date
@@ -265,7 +279,8 @@ def category_report():
             from_date=from_date,
             to_date=to_date,
             detailed_view=detailed_view,
-            datewise_view=datewise_view
+            datewise_view=datewise_view,
+            combine_bank=combine_bank
         )
     else:
         # Query details with patient name, bill number, and date
@@ -289,7 +304,11 @@ def category_report():
         for category, payment_type, amount, patient_name, bill_no, entry_date in details:
             payment_types_present.add(payment_type)
             categories_present.add(category)
-            data.setdefault(category, {}).setdefault(payment_type, []).append({
+            if combine_bank and payment_type in ('UPI', 'SBI'):
+                payment_type_key = 'Bank'
+            else:
+                payment_type_key = payment_type
+            data.setdefault(category, {}).setdefault(payment_type_key, []).append({
                 'amount': amount,
                 'patient_name': patient_name,
                 'bill_no': bill_no,
@@ -304,6 +323,10 @@ def category_report():
 
         # Only show categories/payment types present in results
         all_categories = [c for c in all_categories if c in categories_present]
+        if combine_bank:
+            payment_types_present.discard('UPI')
+            payment_types_present.discard('SBI')
+            payment_types_present.add('Bank')
         all_payment_types = [pt for pt in all_payment_types if pt in payment_types_present]
 
         # Calculate totals
@@ -343,7 +366,8 @@ def category_report():
             from_date=from_date,
             to_date=to_date,
             detailed_view=detailed_view,
-            datewise_view=datewise_view
+            datewise_view=datewise_view,
+            combine_bank=combine_bank
         )
 
 @app.route('/payment_type_report')
