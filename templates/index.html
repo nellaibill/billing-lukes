@@ -36,6 +36,7 @@
         </form>
         <table>
             <tr>
+                <th>Sl No</th>
                 <th>Bill Number</th>
                 <th>Name</th>
                 <th>Date</th>
@@ -44,6 +45,7 @@
             </tr>
             {% for bill in bills %}
             <tr>
+                <td>{{ bill.header.id }}</td>
                 <td>{{ bill.header.op_bill_no }}</td>
                 <td>{{ bill.header.patient_name }}</td>
                 <td>{{ bill.header.date.strftime('%Y-%m-%d') }}</td>

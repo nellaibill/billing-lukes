@@ -106,7 +106,7 @@ def index():
     query = HeaderEntry.query.filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt)
     if is_cancelled:
         query = query.filter(HeaderEntry.is_cancelled == True)
-    headers = query.all()
+    headers = query.order_by(HeaderEntry.id.desc()).all()
     bills = []
     grand_total = 0.0
     cancelled_total = 0.0
@@ -139,22 +139,40 @@ def add_entry():
     payment_types = PaymentType.query.all()
     slno = db.session.query(db.func.count(HeaderEntry.id)).scalar() + 1
     if request.method == 'POST':
-        op_bill_no = request.form['op_bill_no']
-        patient_name = request.form['patient_name']
-        date = datetime.strptime(request.form['date'], '%Y-%m-%d')
-        header = HeaderEntry(op_bill_no=op_bill_no, patient_name=patient_name, date=date, created_at=datetime.now(IST), updated_at=datetime.now(IST))
-        db.session.add(header)
-        db.session.commit()
-        # Multiple details
-        category_ids = request.form.getlist('category')
-        amounts = request.form.getlist('amount')
-        payment_type_ids = request.form.getlist('payment_type')
-        for cat_id, amt, pay_id in zip(category_ids, amounts, payment_type_ids):
-            if cat_id and amt and pay_id:
+        action = request.form.get('action', 'save')
+        if action == 'save':
+            op_bill_no = request.form['op_bill_no']
+            patient_name = request.form['patient_name']
+            date = datetime.strptime(request.form['date'], '%Y-%m-%d')
+            category_ids = request.form.getlist('category')
+            amounts = request.form.getlist('amount')
+            payment_type_ids = request.form.getlist('payment_type')
+            # Check if at least one valid detail is present
+            valid_details = [
+                (cat_id, amt, pay_id)
+                for cat_id, amt, pay_id in zip(category_ids, amounts, payment_type_ids)
+                if cat_id and amt and pay_id and float(amt) > 0
+            ]
+            if not valid_details:
+                flash('No valid entries to save. Please enter at least one item.', 'error')
+                return redirect(url_for('add_entry'))
+            header = HeaderEntry(op_bill_no=op_bill_no, patient_name=patient_name, date=date, created_at=datetime.now(IST), updated_at=datetime.now(IST))
+            db.session.add(header)
+            db.session.commit()
+            for cat_id, amt, pay_id in valid_details:
                 details = DetailsEntry(header_id=header.id, category_id=cat_id, amount=float(amt), payment_type_id=pay_id)
                 db.session.add(details)
-        db.session.commit()
-        return redirect(url_for('print_bill', header_id=header.id, autoprint=1))
+            db.session.commit()
+            flash('Entry saved successfully!', 'success')
+            return redirect(url_for('add_entry'))
+        elif action == 'print':
+            # Print the most recent (last) bill, do not save a new one
+            last_header = HeaderEntry.query.order_by(HeaderEntry.id.desc()).first()
+            if last_header:
+                return redirect(url_for('print_bill', header_id=last_header.id, autoprint=1))
+            else:
+                flash('No bills found to print.', 'error')
+                return redirect(url_for('add_entry'))
     response = make_response(render_template('add_entry.html', categories=categories, payment_types=payment_types, datetime=datetime, slno=slno))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
     return response

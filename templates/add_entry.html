@@ -246,7 +246,7 @@
                 <input type="date" name="date" value="{{ datetime.utcnow().strftime('%Y-%m-%d') }}" required  style="background:#e9ecef;">
             </div>
             <!-- Search box for external API -->
-            <div class="item-row" style="margin-bottom: 1.5em;">
+            <div class="item-row" style="margin-bottom: 1.5em; display: none;">
                 <input type="text" id="external-search" placeholder="Search external records..." autocomplete="off" list="external-bill-datalist">
                 <datalist id="external-bill-datalist"></datalist>
             </div>
@@ -275,11 +275,14 @@
             <div style="margin-top:1em; font-weight:500;">
                 Total Items: <span id="total-items">0</span> &nbsp; | &nbsp; Total Amount: <span id="total-amount">0.00</span>
             </div>
+            <br/>
             <button type="button" id="add-item-btn">Add Item</button>
             <div class="form-actions">
-                <button type="submit" id="save-btn">Save</button>
-                <a href="{{ url_for('index') }}" style="background:#e20b0b;">Cancel</a>
+                <button type="submit" id="save-btn" name="action" value="save">Save Bill</button>
+                <a href="{% if slno > 1 %}{{ url_for('print_bill', header_id=slno-1) }}{% else %}#{% endif %}" target="_blank" id="print-link" style="background:#28a745; color:#fff; border-radius:4px; padding:8px 16px; text-decoration:none; display:inline-block;">Print Bill</a>
+                <a href="{{ url_for('index') }}" style="background:#9c311e; color:#fff; border-radius:4px; padding:8px 16px; text-decoration:none; display:inline-block;">Back</a>
             </div>
+            <!-- Print Bill now uses a direct anchor link, no JS needed -->
         </form>
     </div>
     <div id="billModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.5); z-index:1000;">
