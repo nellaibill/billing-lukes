@@ -469,6 +469,73 @@ def users():
         return redirect(url_for('users'))
     users = User.query.order_by(User.id).all()
     return render_template('users.html', users=users, user=user)
+
+@app.route('/dashboard')
+@login_required
+def dashboard():
+    from datetime import datetime
+    today_str = datetime.now().strftime('%Y-%m-%d')
+    from_date = request.args.get('from_date', today_str)
+    to_date = request.args.get('to_date', today_str)
+    from_dt = datetime.strptime(from_date, '%Y-%m-%d').date()
+    to_dt = datetime.strptime(to_date, '%Y-%m-%d').date()
+
+    # Filtered headers
+    headers_query = HeaderEntry.query.filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt)
+
+    # Total bills
+    total_bills = headers_query.count()
+    # Total amount (excluding cancelled)
+    total_amount = db.session.query(db.func.sum(DetailsEntry.amount)).join(HeaderEntry).filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt, HeaderEntry.is_cancelled == False).scalar() or 0.0
+    # Cancelled bills
+    cancelled_bills = headers_query.filter(HeaderEntry.is_cancelled == True).count()
+    cancelled_amount = db.session.query(db.func.sum(DetailsEntry.amount)).join(HeaderEntry).filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt, HeaderEntry.is_cancelled == True).scalar() or 0.0
+
+    # Top categories by amount
+    top_cat_query = db.session.query(Category.name, db.func.sum(DetailsEntry.amount))\
+        .join(DetailsEntry, DetailsEntry.category_id == Category.id)\
+        .join(HeaderEntry, DetailsEntry.header_id == HeaderEntry.id)\
+        .filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt, HeaderEntry.is_cancelled == False)\
+        .group_by(Category.name)\
+        .order_by(db.func.sum(DetailsEntry.amount).desc())\
+        .limit(5).all()
+    top_categories = [(cat, amt or 0.0) for cat, amt in top_cat_query]
+
+    # Top payment types by amount
+    top_pay_query = db.session.query(PaymentType.name, db.func.sum(DetailsEntry.amount))\
+        .join(DetailsEntry, DetailsEntry.payment_type_id == PaymentType.id)\
+        .join(HeaderEntry, DetailsEntry.header_id == HeaderEntry.id)\
+        .filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt, HeaderEntry.is_cancelled == False)\
+        .group_by(PaymentType.name)\
+        .order_by(db.func.sum(DetailsEntry.amount).desc())\
+        .limit(5).all()
+    top_payment_types = [(pt, amt or 0.0) for pt, amt in top_pay_query]
+
+    # Recent bills (last 10)
+    recent_headers = headers_query.order_by(HeaderEntry.id.desc()).limit(10).all()
+    recent_bills = []
+    for header in recent_headers:
+        total_amt = sum(d.amount for d in header.details)
+        recent_bills.append({
+            'op_bill_no': header.op_bill_no,
+            'patient_name': header.patient_name,
+            'date': header.date,
+            'total_amount': total_amt,
+            'is_cancelled': header.is_cancelled
+        })
+
+    return render_template('dashboard.html',
+        total_bills=total_bills,
+        total_amount=total_amount,
+        cancelled_bills=cancelled_bills,
+        cancelled_amount=cancelled_amount,
+        top_categories=top_categories,
+        top_payment_types=top_payment_types,
+        recent_bills=recent_bills,
+        from_date=from_date,
+        to_date=to_date
+    )
+
 # Date-wise detailed category report
 @app.route('/daily_category_report')
 @login_required

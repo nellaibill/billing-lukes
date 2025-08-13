@@ -4,23 +4,66 @@
     <meta charset="UTF-8">
     <title>Manage Masters</title>
     <style>
-        
-        form { display: flex; gap: 1em; margin-bottom: 1em; }
-        input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex: 1; }
+        .container {
+            max-width: 900px;
+            margin-left: 220px;
+            background: #fff;
+            padding: 2em 2.5em;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        form.master-form {
+            display: flex;
+            gap: 0.5em;
+            align-items: center;
+            margin-bottom: 1em;
+            background: #f4f4f4;
+            padding: 1em 1.5em;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+        form.master-form input {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            flex: 1;
+            min-width: 180px;
+        }
+        form.master-form button {
+            margin-left: 0.5em;
+        }
         button { background: #007bff; color: #fff; border: none; border-radius: 4px; padding: 8px 16px; cursor: pointer; font-size: 1em; }
         button:hover { background: #0056b3; }
-        @media (max-width: 700px) {
-            .container { padding: 1em; }
+            .container { padding: 1em; margin-left: 0; }
             form { flex-direction: column; gap: 0.5em; }
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 2em;
+            background: #fff;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background: #f4f4f4;
+        }
+        @media (max-width: 700px) {
+            .container { padding: 1em; margin-left: 0; }
+            form { flex-direction: column; gap: 0.5em; }
+            table, th, td { font-size: 0.95em; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" style="max-width:100vw; padding:32px 40px 32px 100px;">
             {% include '_navbar.html' %}
         <h1>Manage Masters</h1>
         <h2>Category</h2>
-        <form method="post">
+        <form method="post" class="master-form">
             <input type="text" name="category" placeholder="New Category" required>
             <button type="submit">Add</button>
         </form>
@@ -31,7 +74,7 @@
             {% endfor %}
         </table>
         <h2>Payment Type</h2>
-        <form method="post">
+        <form method="post" class="master-form">
             <input type="text" name="payment_type" placeholder="New Payment Type" required>
             <button type="submit">Add</button>
         </form>

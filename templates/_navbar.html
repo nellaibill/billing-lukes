@@ -1,42 +1,71 @@
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" />
 <style>
-        .navbar {
-            background: #343a40;
-            padding: 1em 2em;
-            border-radius: 8px 8px 0 0;
-            margin-bottom: 2em;
-            display: flex;
-            gap: 1.5em;
-        }
-        .navbar a {
-            color: #fff;
-            text-decoration: none;
-            font-weight: 500;
-            transition: background 0.2s;
-            padding: 6px 14px;
-            border-radius: 4px;
-        }
-        .navbar a.active, .navbar a:focus {
-            background: #007bff;
-        }
-
-        body { font-family: Arial, sans-serif; margin: 2em; background: #f8f9fa; }
-        .container { max-width: 70%; margin: 0 auto; background: #fff; padding: 2em; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-        h1 { margin-bottom: 1em; }
-        table { border-collapse: collapse; width: 100%; margin-bottom: 2em; background: #fff; }
-        th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-        th { background: #f4f4f4; }
-        .back { background: #007bff; color: #fff; border-radius: 4px; padding: 8px 16px; text-decoration: none; }
-        .back:hover { background: #0056b3; }
-        
+    body { font-family: 'Poppins', Arial, sans-serif; }
+    .sidebar {
+        background: #7c3aed;
+        padding: 2em 1em;
+        border-radius: 18px;
+        min-width: 220px;
+        height: 100vh;
+        position: fixed;
+        top: 0;
+        left: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1em;
+        z-index: 100;
+        box-shadow: 0 2px 12px rgba(124,58,237,0.08);
+    }
+    .sidebar .logo {
+        font-size: 1.3em;
+        font-weight: 600;
+        color: #fff;
+        margin-bottom: 2em;
+        letter-spacing: 1px;
+        text-align: left;
+    }
+    .sidebar a {
+        color: #fff;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background 0.2s, color 0.2s;
+        padding: 12px 20px;
+        border-radius: 10px;
+        margin-bottom: 4px;
+        display: flex;
+        align-items: center;
+        gap: 1em;
+        font-size: 1.08em;
+    }
+    .sidebar a.active, .sidebar a:focus {
+        background: #fff;
+        color: #7c3aed;
+        font-weight: 600;
+    }
+    .sidebar a i {
+        font-size: 1.2em;
+        min-width: 22px;
+        text-align: center;
+    }
+    .container {
+        margin-left: 240px !important;
+        max-width: 900px;
+    }
+    @media (max-width: 700px) {
+        .sidebar { position: static; height: auto; min-width: 100px; padding: 1em 0.5em; }
+        .container { margin-left: 0 !important; }
+    }
 </style>
-<nav class="navbar">
-    <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}>Billing Entries</a>
-    <a href="{{ url_for('add_entry') }}" {% if request.endpoint == 'add_entry' %}class="active"{% endif %}>Add Entry</a>
-    <a href="{{ url_for('masters') }}" {% if request.endpoint == 'masters' %}class="active"{% endif %}>Manage Masters</a>
-    <a href="{{ url_for('category_report') }}" {% if request.endpoint == 'category_report' %}class="active"{% endif %}>Category Report</a>
-    <a href="{{ url_for('payment_type_report') }}" {% if request.endpoint == 'payment_type_report' %}class="active"{% endif %}>Cash and Bank Report</a>
+<nav class="sidebar">
+    <div class="logo">BillSmart</div>
+    <a href="{{ url_for('dashboard') }}" {% if request.endpoint == 'dashboard' %}class="active"{% endif %}><i class="fa-solid fa-chart-pie"></i>Dashboard</a>
+    <a href="{{ url_for('index') }}" {% if request.endpoint == 'index' %}class="active"{% endif %}><i class="fa-solid fa-file-invoice"></i>Billing Entries</a>
+    <a href="{{ url_for('add_entry') }}" {% if request.endpoint == 'add_entry' %}class="active"{% endif %}><i class="fa-solid fa-plus"></i>Add Entry</a>
+    <a href="{{ url_for('masters') }}" {% if request.endpoint == 'masters' %}class="active"{% endif %}><i class="fa-solid fa-database"></i>Manage Masters</a>
+    <a href="{{ url_for('category_report') }}" {% if request.endpoint == 'category_report' %}class="active"{% endif %}><i class="fa-solid fa-list"></i>Report</a>
     {% if session.get('usertype') == 'admin' %}
-    <a href="{{ url_for('users') }}" {% if request.path == url_for('users') %}class="active"{% endif %}>Users</a>
+    <a href="{{ url_for('users') }}" {% if request.path == url_for('users') %}class="active"{% endif %}><i class="fa-solid fa-users"></i>Users</a>
     {% endif %}
     <a href="{{ url_for('logout') }}">Logout</a>
 </nav>

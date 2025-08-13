@@ -1,9 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <style>
+        .report-form {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1em;
+            align-items: center;
+            margin-bottom: 1.5em;
+            background: #f4f4f4;
+            padding: 1em 1.5em;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+        }
+    </style>
     <meta charset="UTF-8">
     <title>Category Collection Report</title>
     <style>
+        .container {
+            max-width: 900px;
+            margin-left: 220px;
+            background: #fff;
+            padding: 2em 2.5em;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
         table {
             border-collapse: collapse;
             width: 100%;
@@ -27,13 +48,16 @@
             thead { display: table-header-group; }
             .print-header { display: block !important; page-break-before: always; }
         }
+        @media (max-width: 700px) {
+            .container { padding: 1em; margin-left: 0; }
+        }
     </style>
 </head>
 <body>
-    <div class="container">
+    <div class="container" style="max-width:100vw; padding:32px 40px 32px 100px;">
                 {% include '_navbar.html' %}
 
-        <form method="get" style="margin-bottom:1em;">
+    <form method="get" class="report-form">
             <label><b>From:</b> <input type="date" name="from_date" value="{{ from_date }}"></label>
             <label style="margin-left:1em;"><b>To:</b> <input type="date" name="to_date" value="{{ to_date }}"></label>
             <label style="margin-left:1em;">
@@ -81,9 +105,11 @@
                     {% for cat in all_categories %}
                         <tr>
                             {% if loop.index0 == 0 %}
-                                <td rowspan="{{ all_categories|length + 1 }}" style="vertical-align:top; font-weight:bold;">{{ date|datetime('%d/%B/%Y') }}</td>
+                                <td style="vertical-align:top; font-weight:bold; text-align:left;">{{ date|datetime('%d/%B/%Y') }}</td>
+                            {% else %}
+                                <td style="text-align:left;"></td>
                             {% endif %}
-                            <td>{{ cat }}</td>
+                            <td style="text-align:left;">{{ cat }}</td>
                             {% for pt in all_payment_types %}
                                 <td style="text-align:right; vertical-align:top;">
                                     {% set cat_data = data.get(date, {}).get(cat, {}) %}
@@ -94,6 +120,7 @@
                         </tr>
                     {% endfor %}
                     <tr style="font-weight:bold; background:#f4f4f4;">
+                        <td></td>
                         <td>Total</td>
                         {% for pt in all_payment_types %}
                             <td style="text-align:right;">{{ '%.2f' % total_by_payment_date[date][pt] }}</td>
