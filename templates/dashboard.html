@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    {% macro inr(value) %}{{ '{:,.2f}'.format(value) }}{% endmacro %}
     <title>Dashboard</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 2em; background: #f8f9fa; }
@@ -74,7 +75,7 @@
             </div>
             <div class="summary-box">
                 <div class="summary-title">Total Amount</div>
-                <div class="summary-value">{{ '%.2f' % total_amount }}</div>
+                <div class="summary-value">{{ inr(total_amount) }}</div>
             </div>
             <div class="summary-box">
                 <div class="summary-title">Cancelled Bills</div>
@@ -82,7 +83,7 @@
             </div>
             <div class="summary-box">
                 <div class="summary-title">Cancelled Amount</div>
-                <div class="summary-value">{{ '%.2f' % cancelled_amount }}</div>
+                <div class="summary-value">{{ inr(cancelled_amount) }}</div>
             </div>
         </div>
         <div class="section">
@@ -90,12 +91,12 @@
             <table>
                 <tr>
                     <th>Category</th>
-                    <th>Total Amount</th>
+                    <th style="text-align:right;">Total Amount (₹)</th>
                 </tr>
                 {% for cat, amt in top_categories %}
                 <tr>
                     <td>{{ cat }}</td>
-                    <td>{{ '%.2f' % amt }}</td>
+                    <td style="text-align:right;">{{ inr(amt) }}</td>
                 </tr>
                 {% endfor %}
             </table>
@@ -106,7 +107,7 @@
                 {% for pt, amt in top_payment_types %}
                 <div style="background: #e9f7ef; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.05); padding: 1.2em 2em; min-width: 180px; text-align: center; flex: 1;">
                     <div style="font-size: 1.1em; color: #555; margin-bottom: 0.5em;">{{ pt }}</div>
-                    <div style="font-size: 1.7em; font-weight: bold; color: #28a745;">{{ '%.2f' % amt }}</div>
+                    <div style="font-size: 1.7em; font-weight: bold; color: #28a745;">{{ inr(amt) }}</div>
                 </div>
                 {% endfor %}
             </div>
@@ -118,15 +119,15 @@
                     <th>Bill No</th>
                     <th>Name</th>
                     <th>Date</th>
-                    <th>Total Amount</th>
+                    <th style="text-align:right;">Total Amount (₹)</th>
                     <th>Status</th>
                 </tr>
                 {% for bill in recent_bills %}
                 <tr>
                     <td>{{ bill.op_bill_no }}</td>
                     <td>{{ bill.patient_name }}</td>
-                    <td>{{ bill.date.strftime('%Y-%m-%d') }}</td>
-                    <td>{{ '%.2f' % bill.total_amount }}</td>
+                    <td>{{ bill.date.strftime('%d/%b/%Y') }}</td>
+                    <td style="text-align:right;">{{ inr(bill.total_amount) }}</td>
                     <td>{% if bill.is_cancelled %}<span style="color:red;">Cancelled</span>{% else %}Active{% endif %}</td>
                 </tr>
                 {% endfor %}

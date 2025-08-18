@@ -5,13 +5,74 @@
         .report-form {
             display: flex;
             flex-wrap: wrap;
-            gap: 1em;
+            gap: 1.5em;
             align-items: center;
-            margin-bottom: 1.5em;
-            background: #f4f4f4;
-            padding: 1em 1.5em;
-            border-radius: 8px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            margin-bottom: 2em;
+            background: #fff;
+            padding: 1.5em 2em;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(25, 118, 210, 0.10);
+        }
+        .card-label {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3em;
+            margin-right: 1.5em;
+        }
+        .card-label-text {
+            font-size: 1.05em;
+            color: #1976d2;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+        .card-input {
+            padding: 10px 16px;
+            border: 1px solid #e3eafc;
+            border-radius: 10px;
+            font-size: 1.05em;
+            background: #f7faff;
+            transition: border-color 0.2s;
+        }
+        .card-input:focus {
+            border-color: #1976d2;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.12);
+        }
+        .card-checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 0.7em;
+            margin-right: 1.5em;
+        }
+        .card-checkbox {
+            width: 20px;
+            height: 20px;
+            accent-color: #1976d2;
+            border-radius: 50%;
+            border: 1px solid #e3eafc;
+            margin-right: 6px;
+        }
+        .card-checkbox-text {
+            font-size: 1.05em;
+            color: #1976d2;
+            font-weight: 500;
+        }
+        .card-btn {
+            background: linear-gradient(90deg, #42a5f5 0%, #1976d2 100%);
+            color: #fff;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 30px;
+            font-size: 1.05em;
+            font-weight: 600;
+            box-shadow: 0 2px 12px rgba(25, 118, 210, 0.12);
+            margin-right: 1em;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .card-btn:hover {
+            background: linear-gradient(90deg, #1976d2 0%, #42a5f5 100%);
+            box-shadow: 0 6px 24px rgba(25, 118, 210, 0.18);
         }
     </style>
     <meta charset="UTF-8">
@@ -58,20 +119,29 @@
                 {% include '_navbar.html' %}
 
     <form method="get" class="report-form">
-            <label><b>From:</b> <input type="date" name="from_date" value="{{ from_date }}"></label>
-            <label style="margin-left:1em;"><b>To:</b> <input type="date" name="to_date" value="{{ to_date }}"></label>
-            <label style="margin-left:1em;">
-                <input type="checkbox" name="detailed" value="1" {% if detailed_view %}checked{% endif %} onchange="this.form.submit()"> Detailed View
-            </label>
-            <label style="margin-left:1em;">
-                <input type="checkbox" name="datewise" value="1" {% if datewise_view %}checked{% endif %} onchange="this.form.submit()"> Datewise
-            </label>
-            <label style="margin-left:1em;">
-                <input type="checkbox" name="combine_bank" value="1" {% if combine_bank %}checked{% endif %} onchange="this.form.submit()"> Combine UPI & SBI as Bank
-            </label>
-            <button type="submit" style="background:#1976d2; color:white; border:none; padding:6px 16px; border-radius:4px; margin-left:1em;" id ="filter-btn">Filter</button>
-            <button type="button" style="background:#1976d2; color:white; border:none; padding:6px 16px; border-radius:4px; margin-left:1em;" id ="print-btn" onclick="printReport()">Print</button>
-        </form>
+        <label class="card-label">
+            <span class="card-label-text"><b>From:</b></span>
+            <input type="date" name="from_date" value="{{ from_date }}" class="card-input">
+        </label>
+        <label class="card-label">
+            <span class="card-label-text"><b>To:</b></span>
+            <input type="date" name="to_date" value="{{ to_date }}" class="card-input">
+        </label>
+        <label class="card-checkbox-label">
+            <input type="checkbox" name="detailed" value="1" {% if detailed_view %}checked{% endif %} onchange="this.form.submit()" class="card-checkbox">
+            <span class="card-checkbox-text">Detailed View</span>
+        </label>
+        <label class="card-checkbox-label">
+            <input type="checkbox" name="datewise" value="1" {% if datewise_view %}checked{% endif %} onchange="this.form.submit()" class="card-checkbox">
+            <span class="card-checkbox-text">Datewise</span>
+        </label>
+        <label class="card-checkbox-label">
+            <input type="checkbox" name="combine_bank" value="1" {% if combine_bank %}checked{% endif %} onchange="this.form.submit()" class="card-checkbox">
+            <span class="card-checkbox-text">Combine UPI & SBI as Bank</span>
+        </label>
+        <button type="submit" class="card-btn" id="filter-btn">Filter</button>
+        <button type="button" class="card-btn" id="print-btn" onclick="printReport()">Print</button>
+    </form>
         <div id="report-content">
             {% if datewise_view %}
             <table>
@@ -98,11 +168,22 @@
                         {% for pt in all_payment_types %}
                             <th>{{ pt }}</th>
                         {% endfor %}
-                        <th>Total</th>
+                        <th style="text-align:right;">Total</th>
                     </tr>
                 </thead>
                 {% for date in all_dates %}
                     {% for cat in all_categories %}
+                        {% set cat_data = data.get(date, {}).get(cat, {}) %}
+                        {% set all_zero = true %}
+                        {% for pt in all_payment_types %}
+                            {% if cat_data.get(pt, 0) != 0 %}
+                                {% set all_zero = false %}
+                            {% endif %}
+                        {% endfor %}
+                        {% if total_by_category_date[date][cat] != 0 %}
+                            {% set all_zero = false %}
+                        {% endif %}
+                        {% if not all_zero %}
                         <tr>
                             {% if loop.index0 == 0 %}
                                 <td style="vertical-align:top; font-weight:bold; text-align:left;">{{ date|datetime('%d/%B/%Y') }}</td>
@@ -112,16 +193,16 @@
                             <td style="text-align:left;">{{ cat }}</td>
                             {% for pt in all_payment_types %}
                                 <td style="text-align:right; vertical-align:top;">
-                                    {% set cat_data = data.get(date, {}).get(cat, {}) %}
                                     {{ '%.2f' % cat_data.get(pt, 0) }}
                                 </td>
                             {% endfor %}
                             <td style="text-align:right;"><b>{{ '%.2f' % total_by_category_date[date][cat] }}</b></td>
                         </tr>
+                        {% endif %}
                     {% endfor %}
                     <tr style="font-weight:bold; background:#f4f4f4;">
                         <td></td>
-                        <td>Total</td>
+                        <td style="text-align:right;">Total</td>
                         {% for pt in all_payment_types %}
                             <td style="text-align:right;">{{ '%.2f' % total_by_payment_date[date][pt] }}</td>
                         {% endfor %}
@@ -129,7 +210,7 @@
                     </tr>
                 {% endfor %}
                 <tr style="font-weight:bold; background:#e0e0e0;">
-                    <td colspan="2">Grand Total</td>
+                    <td colspan="2" style="text-align:right;">Grand Total</td>
                     {% for pt in all_payment_types %}
                         <td style="text-align:right;">{{ '%.2f' % total_by_payment[pt] }}</td>
                     {% endfor %}
@@ -160,15 +241,25 @@
                         {% for pt in all_payment_types %}
                             <th>{{ pt }}</th>
                         {% endfor %}
-                        <th>Total</th>
+                        <th style="text-align:right;">Total</th>
                     </tr>
                 </thead>
                 {% for cat in all_categories %}
+                {% set cat_data = data.get(cat, {}) %}
+                {% set all_zero = true %}
+                {% for pt in all_payment_types %}
+                    {% if cat_data.get(pt, 0) != 0 %}
+                        {% set all_zero = false %}
+                    {% endif %}
+                {% endfor %}
+                {% if total_by_category[cat] != 0 %}
+                    {% set all_zero = false %}
+                {% endif %}
+                {% if not all_zero %}
                 <tr>
                     <td>{{ cat }}</td>
                     {% for pt in all_payment_types %}
                         <td style="text-align:right; vertical-align:top;">
-                            {% set cat_data = data.get(cat, {}) %}
                             {% if detailed_view %}
                                 {% if cat_data.get(pt) is iterable and cat_data.get(pt) is not string %}
                                     {% for entry in cat_data.get(pt, []) %}
@@ -189,9 +280,10 @@
                     {% endfor %}
                     <td style="text-align:right;"><b>{{ '%.2f' % total_by_category[cat] }}</b></td>
                 </tr>
+                {% endif %}
                 {% endfor %}
                 <tr style="font-weight:bold; background:#f4f4f4;">
-                    <td>Total</td>
+                    <td style="text-align:right;">Total</td>
                     {% for pt in all_payment_types %}
                         <td style="text-align:right;">{{ '%.2f' % total_by_payment[pt] }}</td>
                     {% endfor %}

@@ -12,48 +12,81 @@
             border-radius: 10px;
             box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         }
-        form.master-form {
+        .card-form {
             display: flex;
-            gap: 0.5em;
+            flex-wrap: wrap;
+            gap: 1.5em;
             align-items: center;
-            margin-bottom: 1em;
-            background: #f4f4f4;
-            padding: 1em 1.5em;
-            border-radius: 8px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+            margin-bottom: 2em;
+            background: #fff;
+            padding: 1.5em 2em;
+            border-radius: 18px;
+            box-shadow: 0 4px 24px rgba(25, 118, 210, 0.10);
         }
-        form.master-form input {
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            flex: 1;
-            min-width: 180px;
+        .card-label {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3em;
+            margin-right: 1.5em;
         }
-        form.master-form button {
-            margin-left: 0.5em;
+        .card-label-text {
+            font-size: 1.05em;
+            color: #1976d2;
+            font-weight: 600;
+            margin-bottom: 2px;
         }
-        button { background: #007bff; color: #fff; border: none; border-radius: 4px; padding: 8px 16px; cursor: pointer; font-size: 1em; }
-        button:hover { background: #0056b3; }
-            .container { padding: 1em; margin-left: 0; }
-            form { flex-direction: column; gap: 0.5em; }
+        .card-input {
+            padding: 10px 16px;
+            border: 1px solid #e3eafc;
+            border-radius: 10px;
+            font-size: 1.05em;
+            background: #f7faff;
+            transition: border-color 0.2s;
+        }
+        .card-input:focus {
+            border-color: #1976d2;
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(25, 118, 210, 0.12);
+        }
+        .card-btn {
+            background: linear-gradient(90deg, #42a5f5 0%, #1976d2 100%);
+            color: #fff;
+            border: none;
+            padding: 10px 28px;
+            border-radius: 30px;
+            font-size: 1.05em;
+            font-weight: 600;
+            box-shadow: 0 2px 12px rgba(25, 118, 210, 0.12);
+            margin-right: 1em;
+            cursor: pointer;
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .card-btn:hover {
+            background: linear-gradient(90deg, #1976d2 0%, #42a5f5 100%);
+            box-shadow: 0 6px 24px rgba(25, 118, 210, 0.18);
         }
         table {
             border-collapse: collapse;
             width: 100%;
             margin-bottom: 2em;
             background: #fff;
+            box-shadow: 0 2px 8px rgba(25, 118, 210, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
         }
         th, td {
-            border: 1px solid #ccc;
-            padding: 10px;
+            border: 1px solid #e3eafc;
+            padding: 12px;
             text-align: left;
         }
         th {
             background: #f4f4f4;
+            color: #1976d2;
+            font-weight: 600;
         }
         @media (max-width: 700px) {
             .container { padding: 1em; margin-left: 0; }
-            form { flex-direction: column; gap: 0.5em; }
+            .card-form { flex-direction: column; gap: 0.5em; }
             table, th, td { font-size: 0.95em; }
         }
     </style>
@@ -63,9 +96,12 @@
             {% include '_navbar.html' %}
         <h1>Manage Masters</h1>
         <h2>Category</h2>
-        <form method="post" class="master-form">
-            <input type="text" name="category" placeholder="New Category" required>
-            <button type="submit">Add</button>
+        <form method="post" class="card-form">
+            <label class="card-label">
+                <span class="card-label-text">New Category</span>
+                <input type="text" name="category" placeholder="Enter category name" required class="card-input">
+            </label>
+            <button type="submit" class="card-btn">Add</button>
         </form>
         <table>
             <tr><th>ID</th><th>Name</th></tr>
@@ -74,9 +110,12 @@
             {% endfor %}
         </table>
         <h2>Payment Type</h2>
-        <form method="post" class="master-form">
-            <input type="text" name="payment_type" placeholder="New Payment Type" required>
-            <button type="submit">Add</button>
+        <form method="post" class="card-form">
+            <label class="card-label">
+                <span class="card-label-text">New Payment Type</span>
+                <input type="text" name="payment_type" placeholder="Enter payment type" required class="card-input">
+            </label>
+            <button type="submit" class="card-btn">Add</button>
         </form>
         <table>
             <tr><th>ID</th><th>Name</th></tr>
