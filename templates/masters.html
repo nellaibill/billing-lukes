@@ -92,7 +92,9 @@
     </style>
 </head>
 <body>
-    <div class="container" style="max-width:100vw; padding:32px 40px 32px 100px;">
+            {% from '_flash_messages.html' import flash_messages %}
+            {{ flash_messages() }}
+        <div class="container" style="max-width:100vw; padding:32px 40px 32px 100px;">
             {% include '_navbar.html' %}
         <h1>Manage Masters</h1>
         <h2>Category</h2>
@@ -104,9 +106,28 @@
             <button type="submit" class="card-btn">Add</button>
         </form>
         <table>
-            <tr><th>ID</th><th>Name</th></tr>
+            <tr><th>ID</th><th>Name</th><th>Action</th></tr>
             {% for cat in categories %}
-            <tr><td>{{ cat.id }}</td><td>{{ cat.name }}</td></tr>
+            <tr>
+                <td>{{ cat.id }}</td>
+                <td>
+                    {% if edit_category and edit_category.id == cat.id %}
+                        <form method="post" class="card-form" style="background:none; box-shadow:none; padding:0; margin:0; gap:0.5em;">
+                            <input type="hidden" name="edit_category_id" value="{{ cat.id }}">
+                            <input type="text" name="edit_category_name" value="{{ cat.name }}" required class="card-input" style="min-width:120px;">
+                            <button type="submit" class="card-btn" style="padding:6px 18px;">Save</button>
+                            <a href="{{ url_for('masters') }}" class="card-btn" style="background:#e0e0e0; color:#333; padding:6px 18px; text-decoration:none;">Cancel</a>
+                        </form>
+                    {% else %}
+                        {{ cat.name }}
+                    {% endif %}
+                </td>
+                <td>
+                    {% if not (edit_category and edit_category.id == cat.id) %}
+                        <a href="{{ url_for('masters', edit_category=cat.id) }}" class="card-btn" style="padding:6px 18px; background:#ffc107; color:#333;">Edit</a>
+                    {% endif %}
+                </td>
+            </tr>
             {% endfor %}
         </table>
         <h2>Payment Type</h2>

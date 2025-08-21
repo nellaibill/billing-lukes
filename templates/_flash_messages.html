@@ -1,0 +1,66 @@
+{% macro flash_messages() %}
+    <style>
+      .flash-messages {
+        position: absolute;
+        top: 32px;
+        right: 32px;
+        z-index: 9999;
+      }
+      .flash-rounded {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 24px;
+        border-radius: 24px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        font-size: 1.1em;
+        min-width: 260px;
+        max-width: 90vw;
+        margin-bottom: 12px;
+        justify-content: left;
+        color: #fff;
+      }
+      .flash-success {
+        background: #22c55e;
+      }
+      .flash-danger {
+        background: #ef4444;
+      }
+      .flash-close {
+        margin-left: auto;
+        background: transparent;
+        border: none;
+        color: #fff;
+        font-size: 1.3em;
+        cursor: pointer;
+        padding: 0 6px;
+        line-height: 1;
+      }
+    </style>
+    <script>
+      window.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+          document.querySelectorAll('.flash-messages .flash-rounded').forEach(function(el) {
+            el.style.display = 'none';
+          });
+        }, 3000);
+      });
+    </script>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flash-messages">
+          {% for category, message in messages %}
+            <div class="flash-rounded flash-{{ category }}" role="alert">
+              {% if category == 'success' %}
+                <span style="background:#d1fae5;color:#059669;border-radius:50%;padding:6px;display:inline-flex;align-items:center;justify-content:center;"><svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' viewBox='0 0 24 24'><circle cx='12' cy='12' r='12' fill='#34d399'/><path d='M17 9l-5.5 5.5L7 10' stroke='#fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg></span>
+              {% elif category == 'danger' %}
+                <span style="background:#fee2e2;color:#b91c1c;border-radius:50%;padding:6px;display:inline-flex;align-items:center;justify-content:center;"><svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' fill='none' viewBox='0 0 24 24'><circle cx='12' cy='12' r='12' fill='#f87171'/><path d='M15 9l-6 6M9 9l6 6' stroke='#fff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg></span>
+              {% endif %}
+              <span>{{ message }}</span>
+              <button class="flash-close" onclick="this.parentElement.style.display='none';" aria-label="Close">&times;</button>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+{% endmacro %}

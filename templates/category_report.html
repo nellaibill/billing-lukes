@@ -127,6 +127,15 @@
             <span class="card-label-text"><b>To:</b></span>
             <input type="date" name="to_date" value="{{ to_date }}" class="card-input">
         </label>
+        <label class="card-label">
+            <span class="card-label-text"><b>Category:</b></span>
+            <select name="filter_category" class="card-input" onchange="this.form.submit()">
+                <option value="">All Categories</option>
+                {% for cat in all_categories_dropdown %}
+                    <option value="{{ cat }}" {% if filter_category == cat %}selected{% endif %}>{{ cat }}</option>
+                {% endfor %}
+            </select>
+        </label>
         <label class="card-checkbox-label">
             <input type="checkbox" name="detailed" value="1" {% if detailed_view %}checked{% endif %} onchange="this.form.submit()" class="card-checkbox">
             <span class="card-checkbox-text">Detailed View</span>
@@ -200,14 +209,32 @@
                         </tr>
                         {% endif %}
                     {% endfor %}
-                    <tr style="font-weight:bold; background:#f4f4f4;">
-                        <td></td>
-                        <td style="text-align:right;">Total</td>
-                        {% for pt in all_payment_types %}
-                            <td style="text-align:right;">{{ '%.2f' % total_by_payment_date[date][pt] }}</td>
+                        {% set category_row_count = 0 %}
+                        {% for cat in all_categories %}
+                            {% set cat_data = data.get(date, {}).get(cat, {}) %}
+                            {% set all_zero = true %}
+                            {% for pt in all_payment_types %}
+                                {% if cat_data.get(pt, 0) != 0 %}
+                                    {% set all_zero = false %}
+                                {% endif %}
+                            {% endfor %}
+                            {% if total_by_category_date[date][cat] != 0 %}
+                                {% set all_zero = false %}
+                            {% endif %}
+                            {% if not all_zero %}
+                                {% set category_row_count = category_row_count + 1 %}
+                            {% endif %}
                         {% endfor %}
-                        <td style="text-align:right;">{{ '%.2f' % grand_total_date[date] }}</td>
-                    </tr>
+                        {% if category_row_count > 1 %}
+                        <tr style="font-weight:bold; background:#f4f4f4;">
+                            <td></td>
+                            <td style="text-align:right;">Total</td>
+                            {% for pt in all_payment_types %}
+                                <td style="text-align:right;">{{ '%.2f' % total_by_payment_date[date][pt] }}</td>
+                            {% endfor %}
+                            <td style="text-align:right;">{{ '%.2f' % grand_total_date[date] }}</td>
+                        </tr>
+                        {% endif %}
                 {% endfor %}
                 <tr style="font-weight:bold; background:#e0e0e0;">
                     <td colspan="2" style="text-align:right;">Grand Total</td>

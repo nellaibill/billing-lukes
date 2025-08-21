@@ -154,7 +154,7 @@ def add_entry():
                 if cat_id and amt and pay_id and float(amt) > 0
             ]
             if not valid_details:
-                flash('No valid entries to save. Please enter at least one item.', 'error')
+                flash('No valid entries to save. Please enter at least one item.', 'danger')
                 return redirect(url_for('add_entry'))
             header = HeaderEntry(op_bill_no=op_bill_no, patient_name=patient_name, date=date, created_at=datetime.now(IST), updated_at=datetime.now(IST))
             db.session.add(header)
@@ -171,7 +171,7 @@ def add_entry():
             if last_header:
                 return redirect(url_for('print_bill', header_id=last_header.id, autoprint=1))
             else:
-                flash('No bills found to print.', 'error')
+                flash('No bills found to print.', 'danger')
                 return redirect(url_for('add_entry'))
     response = make_response(render_template('add_entry.html', categories=categories, payment_types=payment_types, datetime=datetime, slno=slno))
     response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
@@ -182,19 +182,45 @@ def add_entry():
 def masters():
     categories = Category.query.all()
     payment_types = PaymentType.query.all()
+    edit_category = None
+    # Handle edit GET
+    edit_category_id = request.args.get('edit_category')
+    if edit_category_id:
+        edit_category = Category.query.get(int(edit_category_id))
+
     if request.method == 'POST':
+        # Edit category
+        if 'edit_category_id' in request.form:
+            cat_id = request.form['edit_category_id']
+            new_name = request.form['edit_category_name']
+            cat = Category.query.get(int(cat_id))
+            if cat and new_name:
+                cat.name = new_name
+                db.session.commit()
+                flash('Category updated successfully!', 'success')
+            else:
+                flash('Failed to update category.', 'danger')
+            return redirect(url_for('masters'))
+        # Add category
         if 'category' in request.form:
             name = request.form['category']
             if name:
                 db.session.add(Category(name=name))
                 db.session.commit()
+                flash('Category added successfully!', 'success')
+            else:
+                flash('Failed to add category.', 'danger')
+        # Add payment type
         if 'payment_type' in request.form:
             name = request.form['payment_type']
             if name:
                 db.session.add(PaymentType(name=name))
                 db.session.commit()
+                flash('Payment type added successfully!', 'success')
+            else:
+                flash('Failed to add payment type.', 'danger')
         return redirect(url_for('masters'))
-    return render_template('masters.html', categories=categories, payment_types=payment_types)
+    return render_template('masters.html', categories=categories, payment_types=payment_types, edit_category=edit_category)
 
 @app.route('/category_report')
 @login_required
@@ -210,6 +236,10 @@ def category_report():
 
     # Get all categories and payment types
     all_categories = [c.name for c in Category.query.order_by(Category.id).all()]
+    all_categories_dropdown = all_categories.copy()
+    filter_category = request.args.get('filter_category', '')
+    if filter_category:
+        all_categories = [filter_category]
     payment_types_raw = [pt.name for pt in PaymentType.query.order_by(PaymentType.name).all()]
     if combine_bank:
         all_payment_types = [pt for pt in payment_types_raw if pt not in ('UPI', 'SBI')]
@@ -298,9 +328,15 @@ def category_report():
             to_date=to_date,
             detailed_view=detailed_view,
             datewise_view=datewise_view,
-            combine_bank=combine_bank
+            combine_bank=combine_bank,
+            all_categories_dropdown=all_categories_dropdown,
+            filter_category=filter_category
         )
     else:
+        all_categories_dropdown = [c.name for c in Category.query.order_by(Category.id).all()]
+        filter_category = request.args.get('filter_category', '')
+        if filter_category:
+            all_categories = [filter_category]
         # Query details with patient name, bill number, and date
         details = db.session.query(
             Category.name.label('category'),
@@ -385,7 +421,9 @@ def category_report():
             to_date=to_date,
             detailed_view=detailed_view,
             datewise_view=datewise_view,
-            combine_bank=combine_bank
+            combine_bank=combine_bank,
+            all_categories_dropdown=all_categories_dropdown,
+            filter_category=filter_category
         )
 
 @app.route('/payment_type_report')
