@@ -146,7 +146,7 @@
         </label>
         <label class="card-checkbox-label">
             <input type="checkbox" name="combine_bank" value="1" {% if combine_bank %}checked{% endif %} onchange="this.form.submit()" class="card-checkbox">
-            <span class="card-checkbox-text">Combine UPI & SBI as Bank</span>
+            <span class="card-checkbox-text">Combine CARD & QR as Bank</span>
         </label>
         <button type="submit" class="card-btn" id="filter-btn">Filter</button>
         <button type="button" class="card-btn" id="print-btn" onclick="printReport()">Print</button>
@@ -166,6 +166,7 @@
                                         From: {{ from_date|datetime('%d/%B/%Y') if from_date else '' }}
                                         To: {{ to_date|datetime('%d/%B/%Y') if to_date else '' }}
                                     </h4>
+                                    <div style="font-size:12px; color:#555; margin-top:4px;">Printed on: {{ printed_datetime }}</div>
                                 </div>
                                 <div style="width:100%; border-bottom:2px solid #404142; margin-top:8px;"></div>
                             </div>
@@ -258,6 +259,7 @@
                                         From: {{ from_date|datetime('%d/%B/%Y') if from_date else '' }}
                                         To: {{ to_date|datetime('%d/%B/%Y') if to_date else '' }}
                                     </h4>
+                                     <div style="font-size:12px; color:#555; margin-top:4px;">Printed on: {{ printed_datetime }}</div>
                                 </div>
                                 <div style="width:100%; border-bottom:2px solid #1976d2; margin-top:8px;"></div>
                             </div>

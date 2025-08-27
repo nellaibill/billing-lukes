@@ -90,6 +90,7 @@ def logout():
 @login_required
 def index():
     today_str = datetime.now().strftime('%Y-%m-%d')
+    # printed_datetime already set at top
     from_date = request.args.get('from_date', today_str)
     to_date = request.args.get('to_date', today_str)
     is_cancelled = request.args.get('is_cancelled')
@@ -124,13 +125,15 @@ def index():
             cancelled_total += total_amount
         else:
             grand_total += total_amount
-    return render_template('index.html', bills=bills, from_date=from_date, to_date=to_date, grand_total=grand_total, cancelled_total=cancelled_total)
+    printed_datetime = datetime.now().strftime('%d/%B/%Y %I:%M %p')
+    return render_template('index.html', bills=bills, from_date=from_date, to_date=to_date, grand_total=grand_total, cancelled_total=cancelled_total, printed_datetime=printed_datetime)
 
 @app.route('/bill/<int:header_id>')
 def print_bill(header_id):
     header = HeaderEntry.query.get_or_404(header_id)
     details = DetailsEntry.query.filter_by(header_id=header.id).all()
-    return render_template('print_bill.html', header=header, details=details)
+    printed_datetime = datetime.now().strftime('%d/%B/%Y %I:%M %p')
+    return render_template('print_bill.html', header=header, details=details, printed_datetime=printed_datetime)
 
 @app.route('/add', methods=['GET', 'POST'])
 @login_required
@@ -233,6 +236,7 @@ def category_report():
     combine_bank = request.args.get('combine_bank') == '1'
     from_dt = datetime.strptime(from_date, '%Y-%m-%d').date()
     to_dt = datetime.strptime(to_date, '%Y-%m-%d').date()
+    printed_datetime = datetime.now().strftime('%d/%B/%Y %I:%M %p')
 
     # Get all categories and payment types
     all_categories = [c.name for c in Category.query.order_by(Category.id).all()]
@@ -242,10 +246,19 @@ def category_report():
         all_categories = [filter_category]
     payment_types_raw = [pt.name for pt in PaymentType.query.order_by(PaymentType.name).all()]
     if combine_bank:
-        all_payment_types = [pt for pt in payment_types_raw if pt not in ('UPI', 'SBI')]
+        all_payment_types = [pt for pt in payment_types_raw if pt not in ('CARD', 'QR')]
         all_payment_types.append('Bank')
     else:
-        all_payment_types = payment_types_raw
+        # Force order: Cash, QR, Card if present
+        ordered_types = []
+        for pt in ['Cash', 'QR', 'CARD']:
+            if pt in payment_types_raw:
+                ordered_types.append(pt)
+        # Add any other payment types not in the preferred order
+        for pt in payment_types_raw:
+            if pt not in ordered_types:
+                ordered_types.append(pt)
+        all_payment_types = ordered_types
 
     if datewise_view:
         # Query: group by date, category, payment type
@@ -269,7 +282,7 @@ def category_report():
         for date, category, payment_type, total in results:
             payment_types_present.add(payment_type)
             categories_present.add(category)
-            if combine_bank and payment_type in ('UPI', 'SBI'):
+            if combine_bank and payment_type in ('CARD', 'QR'):
                 payment_type_key = 'Bank'
             else:
                 payment_type_key = payment_type
@@ -279,8 +292,8 @@ def category_report():
         # Only show categories/payment types present in results
         all_categories = [c for c in all_categories if c in categories_present]
         if combine_bank:
-            payment_types_present.discard('UPI')
-            payment_types_present.discard('SBI')
+            payment_types_present.discard('CARD')
+            payment_types_present.discard('QR')
             payment_types_present.add('Bank')
         all_payment_types = [pt for pt in all_payment_types if pt in payment_types_present]
 
@@ -330,7 +343,8 @@ def category_report():
             datewise_view=datewise_view,
             combine_bank=combine_bank,
             all_categories_dropdown=all_categories_dropdown,
-            filter_category=filter_category
+            filter_category=filter_category,
+            printed_datetime=printed_datetime
         )
     else:
         all_categories_dropdown = [c.name for c in Category.query.order_by(Category.id).all()]
@@ -358,7 +372,7 @@ def category_report():
         for category, payment_type, amount, patient_name, bill_no, entry_date in details:
             payment_types_present.add(payment_type)
             categories_present.add(category)
-            if combine_bank and payment_type in ('UPI', 'SBI'):
+            if combine_bank and payment_type in ('CARD', 'QR'):
                 payment_type_key = 'Bank'
             else:
                 payment_type_key = payment_type
@@ -378,8 +392,8 @@ def category_report():
         # Only show categories/payment types present in results
         all_categories = [c for c in all_categories if c in categories_present]
         if combine_bank:
-            payment_types_present.discard('UPI')
-            payment_types_present.discard('SBI')
+            payment_types_present.discard('CARD')
+            payment_types_present.discard('QR')
             payment_types_present.add('Bank')
         all_payment_types = [pt for pt in all_payment_types if pt in payment_types_present]
 
@@ -409,22 +423,23 @@ def category_report():
             total_by_category[cat] = cat_total
             grand_total += cat_total
 
-        return render_template(
-            'category_report.html',
-            data=data,
-            all_categories=all_categories,
-            all_payment_types=all_payment_types,
-            total_by_category=total_by_category,
-            total_by_payment=total_by_payment,
-            grand_total=grand_total,
-            from_date=from_date,
-            to_date=to_date,
-            detailed_view=detailed_view,
-            datewise_view=datewise_view,
-            combine_bank=combine_bank,
-            all_categories_dropdown=all_categories_dropdown,
-            filter_category=filter_category
-        )
+    return render_template(
+        'category_report.html',
+        data=data,
+        all_categories=all_categories,
+        all_payment_types=all_payment_types,
+        total_by_category=total_by_category,
+        total_by_payment=total_by_payment,
+        grand_total=grand_total,
+        from_date=from_date,
+        to_date=to_date,
+        detailed_view=detailed_view,
+        datewise_view=datewise_view,
+        combine_bank=combine_bank,
+        all_categories_dropdown=all_categories_dropdown,
+        filter_category=filter_category,
+        printed_datetime=printed_datetime
+    )
 
 @app.route('/payment_type_report')
 @login_required
@@ -438,11 +453,11 @@ def payment_type_report():
     # Get all categories (order by ID for consistency with category report)
     all_categories = [c.name for c in Category.query.order_by(Category.id).all()]
 
-    # Get all payment types, but combine 'UPI' and 'SBI' as 'Bank'
+    # Get all payment types, but combine 'CARD' and 'QR' as 'Bank'
     payment_types_raw = [pt.name for pt in PaymentType.query.order_by(PaymentType.name).all()]
     all_payment_types = []
     for pt in payment_types_raw:
-        if pt in ('UPI', 'SBI'):
+        if pt in ('CARD', 'QR'):
             if 'Bank' not in all_payment_types:
                 all_payment_types.append('Bank')
         else:
@@ -459,7 +474,7 @@ def payment_type_report():
         .filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt, HeaderEntry.is_cancelled == False).all()
 
     for cat, pt, amt in details:
-        pt_key = 'Bank' if pt in ('UPI', 'SBI') else pt
+        pt_key = 'Bank' if pt in ('CARD', 'QR') else pt
         if cat in data and pt_key in data[cat]:
             data[cat][pt_key] += amt
 
@@ -612,6 +627,7 @@ def daily_category_report():
     all_categories = [c.name for c in Category.query.order_by(Category.id).all() if c.name in categories]
     all_payment_types = sorted(payment_types)
 
+    printed_datetime = datetime.now().strftime('%d/%B/%Y %I:%M %p')
     return render_template(
         'daily_category_report.html',
         data=data,
@@ -619,7 +635,8 @@ def daily_category_report():
         all_categories=all_categories,
         all_payment_types=all_payment_types,
         from_date=from_date,
-        to_date=to_date
+        to_date=to_date,
+        printed_datetime=printed_datetime
     )
 
 @app.context_processor

@@ -39,6 +39,9 @@
                 <strong>Status:</strong> {% if header.is_cancelled %}<span style="color:red;">Cancelled</span>{% else %}Active{% endif %}<br>
             </div>
         </div>
+        <div style="text-align:center; font-size:12px; color:#555; margin-bottom:8px;">
+            Printed on: {{ printed_datetime}}
+        </div>
         <table>
             <tr>
                 <th>Category</th>
