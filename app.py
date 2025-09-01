@@ -90,10 +90,11 @@ def logout():
 @login_required
 def index():
     today_str = datetime.now().strftime('%Y-%m-%d')
-    # printed_datetime already set at top
     from_date = request.args.get('from_date', today_str)
     to_date = request.args.get('to_date', today_str)
     is_cancelled = request.args.get('is_cancelled')
+    bill_number = request.args.get('bill_number', '').strip()
+    name = request.args.get('name', '').strip()
     # Cancel bill logic
     if request.method == 'POST' and 'cancel_id' in request.form:
         header = HeaderEntry.query.get(int(request.form['cancel_id']))
@@ -105,6 +106,10 @@ def index():
     from_dt = datetime.strptime(from_date, '%Y-%m-%d').date()
     to_dt = datetime.strptime(to_date, '%Y-%m-%d').date()
     query = HeaderEntry.query.filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt)
+    if bill_number:
+        query = query.filter(HeaderEntry.op_bill_no.like(f"%{bill_number}%"))
+    if name:
+        query = query.filter(HeaderEntry.patient_name.like(f"%{name}%"))
     if is_cancelled:
         query = query.filter(HeaderEntry.is_cancelled == True)
     headers = query.order_by(HeaderEntry.id.desc()).all()
