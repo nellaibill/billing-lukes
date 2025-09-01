@@ -100,7 +100,7 @@
         {% include '_navbar.html' %}
         <h1>Billing Entries</h1>
         <div style="text-align:center; font-size:14px; margin-bottom:5px;">
-            <span style="background:#eaf6ff; padding:2px 10px; border-radius:5px;">Printed on: {{ printed_datetime }}</span>
+            <span style="background:#eaf6ff; padding:2px 10px; border-radius:5px;">Generated On: {{ printed_datetime }}</span>
         </div>
 
         <form method="get" action="{{ url_for('index') }}" class="filter-form">

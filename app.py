@@ -246,12 +246,12 @@ def category_report():
         all_categories = [filter_category]
     payment_types_raw = [pt.name for pt in PaymentType.query.order_by(PaymentType.name).all()]
     if combine_bank:
-        all_payment_types = [pt for pt in payment_types_raw if pt not in ('CARD', 'QR')]
+        all_payment_types = [pt for pt in payment_types_raw if pt not in ('Card', 'QR')]
         all_payment_types.append('Bank')
     else:
         # Force order: Cash, QR, Card if present
         ordered_types = []
-        for pt in ['Cash', 'QR', 'CARD']:
+        for pt in ['Cash', 'QR', 'Card']:
             if pt in payment_types_raw:
                 ordered_types.append(pt)
         # Add any other payment types not in the preferred order
@@ -282,7 +282,7 @@ def category_report():
         for date, category, payment_type, total in results:
             payment_types_present.add(payment_type)
             categories_present.add(category)
-            if combine_bank and payment_type in ('CARD', 'QR'):
+            if combine_bank and payment_type in ('Card', 'QR'):
                 payment_type_key = 'Bank'
             else:
                 payment_type_key = payment_type
@@ -292,7 +292,7 @@ def category_report():
         # Only show categories/payment types present in results
         all_categories = [c for c in all_categories if c in categories_present]
         if combine_bank:
-            payment_types_present.discard('CARD')
+            payment_types_present.discard('Card')
             payment_types_present.discard('QR')
             payment_types_present.add('Bank')
         all_payment_types = [pt for pt in all_payment_types if pt in payment_types_present]
@@ -372,7 +372,7 @@ def category_report():
         for category, payment_type, amount, patient_name, bill_no, entry_date in details:
             payment_types_present.add(payment_type)
             categories_present.add(category)
-            if combine_bank and payment_type in ('CARD', 'QR'):
+            if combine_bank and payment_type in ('Card', 'QR'):
                 payment_type_key = 'Bank'
             else:
                 payment_type_key = payment_type
@@ -392,7 +392,7 @@ def category_report():
         # Only show categories/payment types present in results
         all_categories = [c for c in all_categories if c in categories_present]
         if combine_bank:
-            payment_types_present.discard('CARD')
+            payment_types_present.discard('Card')
             payment_types_present.discard('QR')
             payment_types_present.add('Bank')
         all_payment_types = [pt for pt in all_payment_types if pt in payment_types_present]
@@ -453,11 +453,11 @@ def payment_type_report():
     # Get all categories (order by ID for consistency with category report)
     all_categories = [c.name for c in Category.query.order_by(Category.id).all()]
 
-    # Get all payment types, but combine 'CARD' and 'QR' as 'Bank'
+    # Get all payment types, but combine 'Card' and 'QR' as 'Bank'
     payment_types_raw = [pt.name for pt in PaymentType.query.order_by(PaymentType.name).all()]
     all_payment_types = []
     for pt in payment_types_raw:
-        if pt in ('CARD', 'QR'):
+        if pt in ('Card', 'QR'):
             if 'Bank' not in all_payment_types:
                 all_payment_types.append('Bank')
         else:
@@ -474,7 +474,7 @@ def payment_type_report():
         .filter(HeaderEntry.date >= from_dt, HeaderEntry.date <= to_dt, HeaderEntry.is_cancelled == False).all()
 
     for cat, pt, amt in details:
-        pt_key = 'Bank' if pt in ('CARD', 'QR') else pt
+        pt_key = 'Bank' if pt in ('Card', 'QR') else pt
         if cat in data and pt_key in data[cat]:
             data[cat][pt_key] += amt
 
