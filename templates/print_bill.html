@@ -57,8 +57,15 @@
             {% endfor %}
         </table>
         <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 24px;">
-            <div style="font-weight: bold; font-size: 1.1em; padding-bottom: 40px;">Total Amount: {{ "%.2f"|format(details|sum(attribute='amount')) }}</div>
-            <div style="text-align: center;">
+            <div style="flex:1;">
+                <div style="font-weight: bold; font-size: 1.1em;">Total Amount: {{ "%.2f"|format(details|sum(attribute='amount')) }}</div>
+                {% if header.notes %}
+                <div style="margin-top:12px; font-size:1em; color:#333;">
+                    <strong>Notes:</strong> {{ header.notes }}
+                </div>
+                {% endif %}
+            </div>
+            <div style="text-align: center; min-width: 200px;">
                 <div style="border: 2px solid #f4b183; border-radius: 6px; width: 180px; height: 50px; margin-bottom: 6px;"></div>
                 <span style="font-size: 14px; color: #333;">Cashier Signature</span>
             </div>

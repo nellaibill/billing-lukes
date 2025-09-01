@@ -33,6 +33,7 @@ class HeaderEntry(db.Model):
     is_cancelled = db.Column(db.Boolean, default=False, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(IST), nullable=False)
     updated_at = db.Column(db.DateTime, default=lambda: datetime.now(IST), onupdate=lambda: datetime.now(IST), nullable=False)
+    notes = db.Column(db.String(255), nullable=True)
     details = db.relationship('DetailsEntry', backref='header', lazy=True)
 
 # Details table
@@ -152,6 +153,7 @@ def add_entry():
             op_bill_no = request.form['op_bill_no']
             patient_name = request.form['patient_name']
             date = datetime.strptime(request.form['date'], '%Y-%m-%d')
+            notes = request.form.get('notes', '')
             category_ids = request.form.getlist('category')
             amounts = request.form.getlist('amount')
             payment_type_ids = request.form.getlist('payment_type')
@@ -164,7 +166,7 @@ def add_entry():
             if not valid_details:
                 flash('No valid entries to save. Please enter at least one item.', 'danger')
                 return redirect(url_for('add_entry'))
-            header = HeaderEntry(op_bill_no=op_bill_no, patient_name=patient_name, date=date, created_at=datetime.now(IST), updated_at=datetime.now(IST))
+            header = HeaderEntry(op_bill_no=op_bill_no, patient_name=patient_name, date=date, notes=notes, created_at=datetime.now(IST), updated_at=datetime.now(IST))
             db.session.add(header)
             db.session.commit()
             for cat_id, amt, pay_id in valid_details:

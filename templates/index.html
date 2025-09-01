@@ -146,6 +146,9 @@
                     <div style="font-size:0.95em; color:#555; margin-top:0.5em;">
                         <b>Total Items:</b> {{ bill.total_items }}<br>
                         <b>Total Amount:</b> {{ '%.2f' % bill.total_amount }}
+                        {% if bill.header.notes %}
+                        <div style="margin-top:6px; color:#333;"><b>Notes:</b> {{ bill.header.notes }}</div>
+                        {% endif %}
                     </div>
                     <a href="{{ url_for('print_bill', header_id=bill.header.id) }}" target="_blank" style="display:inline-block;margin-top:0.5em;background:#007bff;color:#fff;padding:6px 14px;border-radius:4px;text-decoration:none;">Print</a>
                     {% if not bill.header.is_cancelled %}
