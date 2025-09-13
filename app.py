@@ -1,3 +1,4 @@
+from flask import send_file
 from flask import Flask, render_template, request, redirect, url_for, make_response, session, flash
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime, timezone, timedelta
@@ -596,6 +597,7 @@ def dashboard():
         to_date=to_date
     )
 
+from werkzeug.utils import secure_filename
 # Date-wise detailed category report
 @app.route('/daily_category_report')
 @login_required
@@ -646,6 +648,46 @@ def daily_category_report():
         printed_datetime=printed_datetime
     )
 
+# Manual backup route
+@app.route('/backup', methods=['GET', 'POST'])
+@login_required
+def manual_backup():
+    message = None
+    if request.method == 'POST':
+        backup_dir = request.form.get('backup_dir')
+        if not backup_dir:
+            message = 'Please specify a backup directory.'
+        else:
+            backup_dir = os.path.abspath(backup_dir)
+            if not os.path.exists(backup_dir):
+                try:
+                    os.makedirs(backup_dir)
+                except Exception as e:
+                    message = f'Failed to create directory: {e}'
+            if not message:
+                today = datetime.now().strftime('%Y-%m-%d')
+                backup_file = os.path.join(backup_dir, f'billing_{today}.db')
+                try:
+                    shutil.copy2(DB_PATH, backup_file)
+                    message = f'Backup successful: {backup_file}'
+                except Exception as e:
+                    message = f'Backup failed: {e}'
+    return render_template('manual_backup.html', message=message)
+
+
+
+# Route to download the latest backup file (must be after app and login_required are defined)
+@app.route('/download_latest_backup')
+@login_required
+def download_latest_backup():
+    import glob
+    backup_files = glob.glob(os.path.join(BACKUP_DIR, 'billing_*.db'))
+    if not backup_files:
+        flash('No backup files found.', 'danger')
+        return redirect(url_for('manual_backup'))
+    latest_file = max(backup_files, key=os.path.getmtime)
+    return send_file(latest_file, as_attachment=True)
+
 @app.context_processor
 def inject_usertype():
     return dict(session=session)
@@ -665,7 +707,7 @@ def format_datetime(value, format='%d/%B/%Y'):
 app.secret_key = 'your_secret_key_here'
 
 BACKUP_DIR = os.path.join(os.path.dirname(__file__), 'instance', 'backups')
-DB_PATH = os.path.join(os.path.dirname(__file__), 'instance', 'lukes_billing_db.db')
+DB_PATH = os.path.join(os.path.dirname(__file__), 'lukes_billing_db.db')
 LAST_BACKUP_FILE = os.path.join(os.path.dirname(__file__), 'instance', 'last_backup.txt')
 
 @app.before_request
@@ -685,16 +727,7 @@ def daily_backup():
         # Update last backup date
         with open(LAST_BACKUP_FILE, 'w') as f:
             f.write(today)
-        # Remove backups older than 7 days
-        for fname in os.listdir(BACKUP_DIR):
-            if fname.startswith('billing_') and fname.endswith('.db'):
-                date_str = fname[len('billing_'):-3]
-                try:
-                    file_date = datetime.strptime(date_str, '%Y-%m-%d')
-                    if (datetime.now() - file_date).days > 7:
-                        os.remove(os.path.join(BACKUP_DIR, fname))
-                except Exception:
-                    pass
+        # No deletion of old backups; retain all backup files as per customer request
 
 if __name__ == '__main__':
     with app.app_context():

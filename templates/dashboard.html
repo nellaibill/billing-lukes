@@ -25,6 +25,10 @@
 <body>
     <div class="container" style="max-width:100vw; padding:32px 40px 32px 48px;">
         {% include '_navbar.html' %}
+        <!-- Download Latest Backup Button -->
+        <div style="display: flex; justify-content: center; margin: 32px 0 24px 0;">
+            <a href="{{ url_for('download_latest_backup') }}" class="card-btn" style="background:#28a745; color:#fff; text-decoration:none; font-size:1.1em; padding:14px 38px; border-radius:30px; box-shadow:0 2px 8px rgba(25,118,210,0.07); font-weight:600;">Download  Backup</a>
+        </div>
         <h1>Dashboard</h1>
         <!-- Date Range Picker (daterangepicker) -->
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
